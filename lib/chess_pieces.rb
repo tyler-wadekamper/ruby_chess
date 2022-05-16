@@ -68,15 +68,15 @@ class ChessPiece
   TOP_LEFT = Coordinate.new(-1, 1)
   TOP = Coordinate.new(0, 1)
   TOP_RIGHT = Coordinate.new(1, 1)
-  RIGHT = Coordinate.new(0, 1)
+  RIGHT = Coordinate.new(1, 0)
   BOT_RIGHT = Coordinate.new(1, -1)
-  BOTTOM = Coordinate.new(0, -1)
+  BOT = Coordinate.new(0, -1)
   BOT_LEFT = Coordinate.new(-1, -1)
 
-  KNIGHT_OFFSETS = [Coordinate.new(-1, -2), Coordinate.new(-2, -1),
-                    Coordinate.new(-2, 1), Coordinate.new(-1, 2),
-                    Coordinate.new(2, 1), Coordinate.new(1, 2),
-                    Coordinate.new(2, -1), Coordinate.new(1, -2)]
+  KNIGHT_OFFSETS = [Coordinate.new(-2, 1), Coordinate.new(-1, 2),
+                     Coordinate.new(1, 2), Coordinate.new(2, 1),
+                    Coordinate.new(2, -1), Coordinate.new(1, -2), 
+                    Coordinate.new(-1, -2), Coordinate.new(-2, -1)]
 
   def initialize(color, coordinate, board)
     @board = board
@@ -94,7 +94,12 @@ class ChessPiece
     reachable = []
     directions.each do |direction|
       direction.coordinates.each do |coord|
-        break if piece_at(coord).same_color?(self)
+        break if board.piece_at(coord.value_array).same_color?(self)
+
+        if board.piece_at(coord.value_array).opposite_color?(self)
+          reachable.push(coord)
+          break
+        end
 
         reachable.push(coord)
       end
@@ -197,16 +202,16 @@ class Pawn < ChessPiece
     reachable = []
     directions.each do |direction|
       direction.coordinates.each do |coord|
-        break if board.piece_at(coord.x_value, coord.y_value).same_color?(self)
+        break if board.piece_at(coord.value_array).same_color?(self)
 
         forward_move = direction.coordinates_array == directions[1].coordinates_array
         if forward_move
-          reachable.push(coord) if board.piece_at(coord).nil_color?
+          reachable.push(coord) if board.piece_at(coord.value_array).nil_color?
           break if moved?
         end
 
         unless forward_move
-          reachable.push(coord) if board.piece_at(coord).opposite_color?(self)
+          reachable.push(coord) if board.piece_at(coord.value_array).opposite_color?(self)
         end
       end
     end

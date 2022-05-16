@@ -1,174 +1,136 @@
 require './lib/chess_pieces.rb'
+require './spec/legal_moves_tester.rb'
 
-def move_coord_array(from_coord, to_coord_array)
-  result_array = []
-  to_coord_array.each do |to_coord|
-    result_array.push([from_coord, to_coord])
-  end
-  result_array
-end
-
-legal_moves_cases = [{subject: , supporting: , expected: , in_check: }]
-
-describe '#legal_regular_moves' do
-  lm_tester = LegalMovesTester.new
-  legal_moves_cases.each do |lm_case|
-    lm_tester.test(lm_case[:subject], lm_case[:supporting],
-                   lm_case[:expected], lm_case[:in_check])
-  end
-end
-
-describe Pawn do
+describe ChessPiece do
   white = WhiteColor.new
   black = BlackColor.new
   let(:board) { double('ChessBoard') }
-  before { allow(board).to receive(:mock_result).and_return(board) }
 
   describe '#legal_regular_moves' do
-    context 'when move does not put self in check' do
-      before { allow(board).to receive(:in_check?).and_return(false) }
+    legal_moves_cases =
+      [{ subject: ['Pawn', white, Coordinate.new(5, 1)],
+         supporting: [],
+         expected: [[5, 2], [5, 3]],
+         in_check: [] },
+       { subject: ['Pawn', white, Coordinate.new(6, 5)],
+         supporting: [],
+         expected: [[6, 6]],
+         in_check: [] },
+       { subject: ['Pawn', white, Coordinate.new(0, 6)],
+         supporting: [],
+         expected: [[0, 7]],
+         in_check: [] },
+       { subject: ['Pawn', black, Coordinate.new(3, 6)],
+         supporting: [],
+         expected: [[3, 5], [3, 4]],
+         in_check: [] },
+       { subject: ['Pawn', black, Coordinate.new(0, 1)],
+         supporting: [],
+         expected: [[0, 0]],
+         in_check: [] },
+       { subject: ['Pawn', black, Coordinate.new(6, 3)],
+         supporting: [['Rook', white, Coordinate.new(6, 2)]],
+         expected: [],
+         in_check: [] },
+       { subject: ['Pawn', white, Coordinate.new(5, 2)],
+         supporting: [['Pawn', black, Coordinate.new(5, 3)],
+                      ['Bishop', black, Coordinate.new(6, 3)]],
+         expected: [[6, 3]],
+         in_check: [] },
+       { subject: ['Pawn', black, Coordinate.new(2, 5)],
+         supporting: [['Queen', black, Coordinate.new(2, 4)],
+                      ['Knight', white, Coordinate.new(3, 4)]],
+         expected: [[3, 4]],
+         in_check: [] },
+       { subject: ['Pawn', black, Coordinate.new(1, 6)],
+         supporting: [['King', white, Coordinate.new(0, 5)],
+                      ['Pawn', white, Coordinate.new(2, 5)]],
+         expected: [[0, 5], [1, 5], [1, 4], [2, 5]],
+         in_check: [] },
+       { subject: ['Pawn', white, Coordinate.new(5, 4)],
+         supporting: [['Rook', white, Coordinate.new(4, 5)],
+                      ['Knight', black, Coordinate.new(6, 5)]],
+         expected: [[5, 5], [6, 5]],
+         in_check: [] },
+       { subject: ['Pawn', black, Coordinate.new(5, 6)],
+         supporting: [['Rook', black, Coordinate.new(4, 5)],
+                      ['Queen', black, Coordinate.new(5, 5)],
+                      ['Pawn', black, Coordinate.new(6, 5)]],
+         expected: [],
+         in_check: [] },
+       { subject: ['Pawn', white, Coordinate.new(3, 1)],
+         supporting: [],
+         expected: [],
+         in_check: [[3, 2], [3, 3]] },
+       { subject: ['King', white, Coordinate.new(2, 6)],
+         supporting: [],
+         expected: [[1, 6], [1, 7], [2, 7], [3, 7],
+                    [3, 6], [3, 5], [2, 5], [1, 5]],
+         in_check: [] },
+       { subject: ['King', black, Coordinate.new(1, 5)],
+         supporting: [['Pawn', black, Coordinate.new(1, 4)],
+                      ['Pawn', white, Coordinate.new(2, 5)],
+                      ['Bishop', white, Coordinate.new(7, 0)],
+                      ['Rook', white, Coordinate.new(0, 6)]],
+         expected: [[0, 6], [2, 4]],
+         in_check: [[0, 5], [1, 6], [2, 6], [2, 5], [0, 4]] },
+       { subject: ['King', white, Coordinate.new(7, 4)],
+         supporting: [['Queen', black, Coordinate.new(6, 4)],
+                      ['Rook', black, Coordinate.new(6, 7)]],
+         expected: [],
+         in_check: [[6, 4], [6, 5], [7, 5], [7, 3], [6, 3], [6, 4]] },
+       { subject: ['Queen', white, Coordinate.new(2, 2)],
+         supporting: [['Rook', black, Coordinate.new(4, 4)],
+                      ['Knight', black, Coordinate.new(5, 5)]],
+         expected: [[1, 2], [0, 2], [1, 3], [0, 4], [2, 3], [2, 4], [2, 5],
+                    [2, 6], [2, 7], [3, 3], [4, 4], [3, 2], [4, 2], [5, 2],
+                    [6, 2], [7, 2], [3, 1], [4, 0], [2, 1], [2, 0], [1, 1],
+                    [0, 0]],
+         in_check: [] },
+       { subject: ['Queen', black, Coordinate.new(0, 7)],
+         supporting: [['Pawn', black, Coordinate.new(0, 1)]],
+         expected: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7],
+                    [1, 6], [2, 5], [3, 4], [4, 3], [5, 2], [6, 1], [7, 0],
+                    [0, 6], [0, 5], [0, 4], [0, 3], [0, 2]],
+         in_check: [] },
+       { subject: ['Bishop', black, Coordinate.new(1, 2)],
+         supporting: [['Pawn', black, Coordinate.new(3, 0)],
+                      ['Pawn', white, Coordinate.new(4, 5)],
+                      ['Pawn', white, Coordinate.new(5, 6)],],
+         expected: [[0, 3], [2, 3], [3, 4], [4, 5], [2, 1], [0, 1]],
+         in_check: [] },
+       { subject: ['Knight', white, Coordinate.new(5, 5)],
+         supporting: [['Pawn', black, Coordinate.new(7, 6)],
+                      ['Pawn', white, Coordinate.new(7, 4)]],
+         expected: [[3, 6], [4, 7], [6, 7], [7, 6], [6, 3], [4, 3], [3, 4]],
+         in_check: [] },
+       { subject: ['Rook', black, Coordinate.new(6, 1)],
+         supporting: [['Pawn', black, Coordinate.new(4, 1)],
+                      ['Pawn', white, Coordinate.new(6, 7)]],
+         expected: [[5, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [7, 1], [6, 0]],
+         in_check: [] },
+        ]
 
-      context 'when the board is empty' do
-        before { allow(board).to receive(:piece_at).and_return(NilPiece.new) }
+    legal_moves_cases.each do |lm_case|
+      context supporting_context(lm_case[:supporting]).to_s do
+        before { allow_supporting(board, lm_case[:supporting]) }
 
-        cases = [{ color: white, square: 'f2', x: 5, y: 1, to_coords: [[5, 2], [5, 3]] },
-                { color: white, square: 'g6', x: 6, y: 5, to_coords: [[6, 6]] },
-                { color: white, square: 'a7', x: 0, y: 6, to_coords: [[0, 7]] },
-                { color: black, square: 'd7', x: 3, y: 6, to_coords: [[3, 5], [3, 4]] },
-                { color: black, square: 'a2', x: 0, y: 1, to_coords: [[0, 0]] }]
+        context check_context(lm_case[:in_check], lm_case[:subject][2]).to_s do
+          before { allow_check(board, lm_case[:subject][2], lm_case[:in_check]) }
 
-        cases.each do |t_case|
-          color = t_case[:color]
-          square = t_case[:square]
-          x = t_case[:x]
-          y = t_case[:y]
-          to_coords = t_case[:to_coords]
+          subject(:subject_piece) do
+            Object.const_get(lm_case[:subject][0]).new(lm_case[:subject][1], lm_case[:subject][2], board)
+          end
 
-          context "with only a #{color.name} pawn on #{square}" do
-            subject(:pawn) { described_class.new(color, Coordinate.new(x, y), board) }
-            let(:expected_moves) { move_coord_array([x, y], to_coords) }
+          context to_string(lm_case[:subject][1].name, lm_case[:subject][0].downcase, lm_case[:subject][2]).to_s do
+            move_array = expected_moves(lm_case[:subject][2], lm_case[:expected])
 
-            it "returns the moves #{move_coord_array([x, y], to_coords)}" do
-              pawn_moves = pawn.legal_regular_moves
-
-              move_values = pawn_moves.map(&:coordinates_array)
-              expect(move_values).to eq(expected_moves)
+            it it_string(move_array).to_s do
+              execute_it(subject_piece, move_array)
             end
           end
         end
       end
-
-      context 'when blocked forward' do
-        context 'and can attack left or right' do
-          before do
-            allow(board).to receive(:piece_at)
-              .and_return(attackable_l, attackable_l, blocking, attackable_r, attackable_r)
-          end
-
-          context 'a black pawn on e4' do
-            let(:blocking) { Pawn.new(white, Coordinate.new(4, 2), board) }
-            let(:attackable_l) { Pawn.new(white, Coordinate.new(5, 2), board) }
-            let(:attackable_r) { Pawn.new(white, Coordinate.new(3, 2), board) }
-
-            subject(:pawn) { described_class.new(black, Coordinate.new(4, 3), board) }
-
-            to_coords = [[3, 2], [5, 2]]
-            let(:expected_moves) { move_coord_array([4, 3], to_coords) }
-
-            it "returns the moves #{move_coord_array([4, 3], to_coords)}" do
-              pawn_moves = pawn.legal_regular_moves
-
-              move_values = pawn_moves.map(&:coordinates_array)
-              expect(move_values).to eq(expected_moves)
-            end
-          end
-
-          context 'a white pawn on b2' do
-            let(:blocking) { Pawn.new(white, Coordinate.new(1, 2), board) }
-            let(:attackable_l) { Pawn.new(black, Coordinate.new(0, 2), board) }
-            let(:attackable_r) { Pawn.new(black, Coordinate.new(2, 2), board) }
-
-            subject(:pawn) { described_class.new(white, Coordinate.new(1, 1), board) }
-
-            to_coords = [[0, 2], [2, 2]]
-            let(:expected_moves) { move_coord_array([1, 1], to_coords) }
-
-            it "returns the moves #{move_coord_array([1, 1], to_coords)}" do
-              pawn_moves = pawn.legal_regular_moves
-
-              move_values = pawn_moves.map(&:coordinates_array)
-              expect(move_values).to eq(expected_moves)
-            end
-          end
-        end
-
-        context 'and attacking squares empty' do
-          before do
-            allow(board).to receive(:piece_at)
-            .and_return(nil_attack, nil_attack, blocking, nil_attack, nil_attack) }
-          end
-          let(:blocking) { Pawn.new(black, Coordinate.new(1, 2), board) }
-          let(:nil_attack) { NilPiece.new }
-
-          context 'a black pawn on c7' do
-            subject(:pawn) { described_class.new(black, Coordinate.new(1, 1), board) }
-
-            it 'returns an empty array' do
-
-            end
-          end
-        end
-
-        context 'and attacking squares blocked by own color' do
-          before { allow(board).to receive(:piece_at).with().and_return() }
-
-          context 'a black pawn on d7' do
-            it 'returns the correct moves' do
-              
-            end
-          end
-        end
-      end
-
-      # end
-
-      # context 'when not blocked forward' do
-      #   before { allow(board).to receive(:piece_at).with().and_return() }
-        
-      #   context 'and can attack left or right' do
-      #     before { allow(board).to receive(:piece_at).with().and_return() }
-
-      #     context 'a white pawn on c7' do
-      #       it 'returns the correct moves' do
-              
-      #       end
-      #     end
-      #   end
-
-      #   context 'and can attack right' do
-      #     before { allow(board).to receive(:piece_at).with().and_return() }
-
-      #     context 'a black pawn on h2' do
-      #       it 'returns the correct moves' do
-              
-      #       end
-      #     end
-      #   end
-
-      #   context 'and can attack left' do
-      #     before { allow(board).to receive(:piece_at).with().and_return() }
-
-      #     context 'a white pawn on g5' do
-      #       it 'returns the correct moves' do
-              
-      #       end
-      #     end
-      #   end
-      # end
     end
-
-    # context 'when move puts self in check' do
-    #   before { allow(board).to receive(:in_check?).and_return(true) }
-    # end
   end
 end
