@@ -30,9 +30,9 @@ class Coordinate
     @y_value = y_value
   end
 
-  def equal?(coordinate)
-    return false unless x_value == coordinate.x_value
-    return false unless y_value == coordinate.y_value
+  def equal?(other)
+    return false unless x_value == other.x_value
+    return false unless y_value == other.y_value
 
     true
   end
@@ -84,6 +84,7 @@ class ChessPiece
     @coordinate = coordinate
     @offsets = nil
     @type = nil
+    @has_moved = false
   end
 
   def black_offsets
@@ -138,9 +139,9 @@ class ChessPiece
     double_length
   end
 
-  def last_rank?
-    return true if color.white? && coordinate.y_value == 7
-    return true if color.black? && coordinate.y_value.zero?
+  def second_last_rank?
+    return true if color.white? && coordinate.y_value == 6
+    return true if color.black? && coordinate.y_value == 1
 
     false
   end
@@ -173,6 +174,22 @@ class ChessPiece
     false
   end
 
+  def white?
+    return true if color.white?
+
+    false
+  end
+
+  def black?
+    return true if color.black?
+
+    false
+  end
+
+  def moved?
+    has_moved
+  end
+
   def pawn?() false end
   def king?() false end
   def queen?() false end
@@ -184,8 +201,9 @@ end
 class NilPiece < ChessPiece
   attr_reader :color
 
-  def initialize
+  def initialize(coordinate = Coordinate.new(-1, -1))
     @color = nil
+    @coordinate = coordinate
   end
 end
 
@@ -321,18 +339,5 @@ class Direction
 
   def coordinates_array
     coordinates.map(&:value_array)
-  end
-end
-
-class Move
-  attr_reader :from_coord, :to_coord
-
-  def initialize(from_coord, to_coord)
-    @from_coord = from_coord
-    @to_coord = to_coord
-  end
-
-  def coordinates_array
-    [from_coord.value_array, to_coord.value_array]
   end
 end
