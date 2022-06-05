@@ -12,10 +12,10 @@ class Move
   def legal?
     return false if piece.is_a?(NilPiece)
     return false unless piece.color == color
-    return true if piece.legal_regular_moves.any? { |move| equal?(move) }
 
-    return true if move.castle?
-    return true if move.en_passant?
+    return true if piece.legal_regular_moves.any? { |move| equal?(move) }
+    return true if legal_castle?
+    return true if legal_en_passant?
 
     false
   end
@@ -24,7 +24,7 @@ class Move
     adjustment = -1 if piece.white?
     adjustment = 1 if piece.black?
 
-    Coordinate.new(to_coord.x, to_coord.y + adjustment)
+    Coordinate.new(to_coord.x_value, to_coord.y_value + adjustment)
   end
 
   def pawn_double?
@@ -41,23 +41,36 @@ class Move
 
   private
 
-  def castle?
-    # piece is king
+  def legal_castle?
+    corner_piece = kingside_corner_piece if kingside?
+    corner_piece = queenside_corner_piece if queenside?
+
+    return false unless castle?(corner_piece)
+
+    return false if board.in_check?(color)
+
+    pieces_between.each do |between|
+      mock_board =
+        board.mock_result(
+          from_coord.value_array,
+          between.coordinate.value_array
+        )
+      print "#{from_coord.value_array} #{piece.coordinate.value_array}"
+      puts mock_board.in_check?(color)
+      return false if mock_board.in_check?(color)
+    end
+
+    true
+  end
+
+  def castle?(corner_piece)
     return false unless piece.king?
     return false if piece.moved?
     return false unless valid_castle_coord?
 
-    corner_piece = kingside_corner_piece if kingside?
-    corner_piece = queenside_corner_piece if queenside?
-
     return false unless corner_piece.is_a?(Rook)
     return false if corner_piece.moved?
-    return false unless pieces_between(corner_piece).all? { |piece| piece.is_a?(NilPiece) }
-
-    pieces_between.each do |piece|
-      mock_board = board.mock_result(from_coord.value_array, piece.coordinate.value_array)
-      return false if mock_board.in_check?(color)
-    end
+    return false unless pieces_between.all? { |piece| piece.is_a?(NilPiece) }
 
     true
   end
@@ -94,7 +107,7 @@ class Move
     return board.piece_at(Coordinate.new(0, 7).value_array) if piece.black?
   end
 
-  def pieces_between(corner_piece)
+  def pieces_between
     between_x = from_coord.x_value
     between_y = from_coord.y_value
 
@@ -114,13 +127,27 @@ class Move
   end
 
   def en_passant?
+    puts "got to pawn"
     return false unless piece.pawn?
+    puts "got to fifth"
     return false unless piece.fifth_rank?
 
     adjacent_piece = board.piece_at(adjacent_coordinate.value_array)
+    puts "got to adjacent pawn"
     return false unless adjacent_piece.pawn?
+    puts "got to adjacent color"
     return false if adjacent_piece.color == color
+    puts "got to last_moved"
     return false unless board.last_moved_two == adjacent_piece
+
+    true
+  end
+
+  def legal_en_passant?
+    return false unless en_passant?
+
+    mock_board = board.mock_result(from_coord.value_array, to_coord.value_array)
+    return false if mock_board.in_check?(color)
 
     true
   end
@@ -150,6 +177,6 @@ class Move
     adjustment = -2 if piece.white?
     adjustment = 2 if piece.black?
 
-    Coordinate.new(to_coord.x, to_coord.y + adjustment)
+    Coordinate.new(to_coord.x_value, to_coord.y_value + adjustment)
   end
 end

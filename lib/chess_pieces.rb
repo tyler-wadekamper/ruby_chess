@@ -1,23 +1,35 @@
+require "./lib/chess_moves.rb"
+
 class WhiteColor
   attr_reader :color, :name
 
   def initialize
-    @name = 'white'
+    @name = "white"
   end
-  
-  def black?() false end
-  def white?() true end
+
+  def black?
+    false
+  end
+
+  def white?
+    true
+  end
 end
 
 class BlackColor
   attr_reader :color, :name
 
   def initialize
-    @name = 'black'
+    @name = "black"
   end
-  
-  def black?() true end
-  def white?() false end
+
+  def black?
+    true
+  end
+
+  def white?
+    false
+  end
 end
 
 class Coordinate
@@ -61,8 +73,13 @@ class Coordinate
 end
 
 class ChessPiece
-  attr_reader :color, :offsets, :coordinate,
-              :direction_length, :board, :type
+  attr_reader :color,
+              :offsets,
+              :coordinate,
+              :direction_length,
+              :board,
+              :type,
+              :has_moved
 
   LEFT = Coordinate.new(-1, 0)
   TOP_LEFT = Coordinate.new(-1, 1)
@@ -73,22 +90,30 @@ class ChessPiece
   BOT = Coordinate.new(0, -1)
   BOT_LEFT = Coordinate.new(-1, -1)
 
-  KNIGHT_OFFSETS = [Coordinate.new(-2, 1), Coordinate.new(-1, 2),
-                     Coordinate.new(1, 2), Coordinate.new(2, 1),
-                    Coordinate.new(2, -1), Coordinate.new(1, -2), 
-                    Coordinate.new(-1, -2), Coordinate.new(-2, -1)]
+  KNIGHT_OFFSETS = [
+    Coordinate.new(-2, 1),
+    Coordinate.new(-1, 2),
+    Coordinate.new(1, 2),
+    Coordinate.new(2, 1),
+    Coordinate.new(2, -1),
+    Coordinate.new(1, -2),
+    Coordinate.new(-1, -2),
+    Coordinate.new(-2, -1)
+  ]
 
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     @board = board
     @color = color
     @coordinate = coordinate
     @offsets = nil
     @type = nil
-    @has_moved = false
+    @has_moved = has_moved
   end
 
   def black_offsets
-    offsets.map! { |offset| Coordinate.new(offset.x_value, offset.y_value * -1) }
+    offsets.map! do |offset|
+      Coordinate.new(offset.x_value, offset.y_value * -1)
+    end
   end
 
   def reachable_coordinates
@@ -111,15 +136,19 @@ class ChessPiece
   def legal_regular_moves
     moves = []
     reachable_coordinates.each do |to_coord|
-      move = Move.new(coordinate, to_coord)
-      mock_board = board.mock_result(move.from_coord.value_array, move.to_coord.value_array)
+      move = Move.new(color, coordinate, to_coord, board)
+      mock_board =
+        board.mock_result(
+          move.from_coord.value_array,
+          move.to_coord.value_array
+        )
       next if mock_board.in_check?(color)
 
       moves.push(move)
     end
     moves
   end
-  
+
   def directions
     directions = []
     offsets.each do |offset|
@@ -154,14 +183,18 @@ class ChessPiece
   end
 
   def same_color?(piece)
-    raise "Method 'same_color?' expected ChessPiece object, recieved #{piece}" unless piece.is_a?(ChessPiece)
+    unless piece.is_a?(ChessPiece)
+      raise "Method 'same_color?' expected ChessPiece object, recieved #{piece}"
+    end
     return true if piece.color == color
 
     false
   end
 
   def opposite_color?(piece)
-    raise "Method 'opposite_color?' expected ChessPiece object, recieved #{piece}" unless piece.is_a?(ChessPiece)
+    unless piece.is_a?(ChessPiece)
+      raise "Method 'opposite_color?' expected ChessPiece object, recieved #{piece}"
+    end
     return false if color.nil?
     return true if piece.color != color
 
@@ -190,12 +223,29 @@ class ChessPiece
     has_moved
   end
 
-  def pawn?() false end
-  def king?() false end
-  def queen?() false end
-  def bishop?() false end
-  def knight?() false end
-  def rook?() false end
+  def pawn?
+    false
+  end
+
+  def king?
+    false
+  end
+
+  def queen?
+    false
+  end
+
+  def bishop?
+    false
+  end
+
+  def knight?
+    false
+  end
+
+  def rook?
+    false
+  end
 end
 
 class NilPiece < ChessPiece
@@ -208,12 +258,12 @@ class NilPiece < ChessPiece
 end
 
 class Pawn < ChessPiece
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     super
     @offsets = [TOP_LEFT, TOP, TOP_RIGHT]
     black_offsets if color.black?
     @direction_length = 1
-    @type = 'pawn'
+    @type = "pawn"
   end
 
   def reachable_coordinates
@@ -222,14 +272,17 @@ class Pawn < ChessPiece
       direction.coordinates.each do |coord|
         break if board.piece_at(coord.value_array).same_color?(self)
 
-        forward_move = direction.coordinates_array == directions[1].coordinates_array
+        forward_move =
+          direction.coordinates_array == directions[1].coordinates_array
         if forward_move
           reachable.push(coord) if board.piece_at(coord.value_array).nil_color?
           break if moved?
         end
 
         unless forward_move
-          reachable.push(coord) if board.piece_at(coord.value_array).opposite_color?(self)
+          if board.piece_at(coord.value_array).opposite_color?(self)
+            reachable.push(coord)
+          end
         end
       end
     end
@@ -249,11 +302,11 @@ class Pawn < ChessPiece
 end
 
 class King < ChessPiece
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     super
     @offsets = [LEFT, TOP_LEFT, TOP, TOP_RIGHT, RIGHT, BOT_RIGHT, BOT, BOT_LEFT]
     @direction_length = 1
-    @type = 'king'
+    @type = "king"
   end
 
   def king?
@@ -262,11 +315,11 @@ class King < ChessPiece
 end
 
 class Queen < ChessPiece
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     super
     @offsets = [LEFT, TOP_LEFT, TOP, TOP_RIGHT, RIGHT, BOT_RIGHT, BOT, BOT_LEFT]
     @direction_length = 7
-    @type = 'queen'
+    @type = "queen"
   end
 
   def queen?
@@ -275,11 +328,11 @@ class Queen < ChessPiece
 end
 
 class Bishop < ChessPiece
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     super
     @offsets = [TOP_LEFT, TOP_RIGHT, BOT_RIGHT, BOT_LEFT]
     @direction_length = 7
-    @type = 'bishop'
+    @type = "bishop"
   end
 
   def bishop?
@@ -288,11 +341,11 @@ class Bishop < ChessPiece
 end
 
 class Knight < ChessPiece
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     super
     @offsets = KNIGHT_OFFSETS
     @direction_length = 1
-    @type = 'knight'
+    @type = "knight"
   end
 
   def knight?
@@ -301,11 +354,11 @@ class Knight < ChessPiece
 end
 
 class Rook < ChessPiece
-  def initialize(color, coordinate, board)
+  def initialize(color, coordinate, board, has_moved = false)
     super
     @offsets = [LEFT, TOP, RIGHT, BOT]
     @direction_length = 7
-    @type = 'rook'
+    @type = "rook"
   end
 
   def rook?
