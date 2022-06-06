@@ -39,6 +39,13 @@ class Move
     [from_coord.value_array, to_coord.value_array]
   end
 
+  def equal?(other)
+    return false unless coordinates_array == other.coordinates_array
+    return false unless other.color == color
+
+    true
+  end
+
   private
 
   def legal_castle?
@@ -55,8 +62,6 @@ class Move
           from_coord.value_array,
           between.coordinate.value_array
         )
-      print "#{from_coord.value_array} #{piece.coordinate.value_array}"
-      puts mock_board.in_check?(color)
       return false if mock_board.in_check?(color)
     end
 
@@ -127,17 +132,12 @@ class Move
   end
 
   def en_passant?
-    puts "got to pawn"
     return false unless piece.pawn?
-    puts "got to fifth"
     return false unless piece.fifth_rank?
 
     adjacent_piece = board.piece_at(adjacent_coordinate.value_array)
-    puts "got to adjacent pawn"
     return false unless adjacent_piece.pawn?
-    puts "got to adjacent color"
     return false if adjacent_piece.color == color
-    puts "got to last_moved"
     return false unless board.last_moved_two == adjacent_piece
 
     true
@@ -165,12 +165,6 @@ class Move
     return false if castle?
 
     true
-  end
-
-  def equal?(other)
-    return true if coordinates_array == other.coordinates_array
-
-    false
   end
 
   def double_coordinate

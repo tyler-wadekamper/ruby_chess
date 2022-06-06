@@ -28,8 +28,6 @@ def allow_supporting(board_double, t_case)
   supporting_pieces = t_case[:supporting]
   first_supporting_last_moved_two = t_case[:first_supporting_last_moved_two]
 
-  puts "first supporting: #{first_supporting_last_moved_two.nil?}"
-
   (0..7).each do |x|
     (0..7).each do |y|
       allow(board_double).to receive(:piece_at).with([x, y]).and_return(
@@ -39,8 +37,6 @@ def allow_supporting(board_double, t_case)
   end
 
   supporting_pieces.map! { |piece_info| allow_piece(board_double, piece_info) }
-
-  puts supporting_pieces[0]
 
   if first_supporting_last_moved_two
     allow_last_moved_two(board_double, supporting_pieces[0])

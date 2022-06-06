@@ -1,4 +1,5 @@
 require "./lib/chess_moves.rb"
+require "./lib/chess_input.rb"
 
 class WhiteColor
   attr_reader :color, :name
@@ -35,7 +36,7 @@ end
 class Coordinate
   attr_reader :x_value, :y_value
 
-  ALPHA_TO_X = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7 }.freeze
+  include Alphanumeric_Key
 
   def initialize(x_value, y_value)
     @x_value = x_value
