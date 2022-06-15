@@ -1,11 +1,14 @@
 require "./lib/chess_moves.rb"
 require "./lib/chess_input.rb"
+include Alphanumeric_Key
 
 class WhiteColor
   attr_reader :color, :name
+  attr_accessor :opposite
 
   def initialize
     @name = "white"
+    @opposite = nil
   end
 
   def black?
@@ -19,9 +22,11 @@ end
 
 class BlackColor
   attr_reader :color, :name
+  attr_accessor :opposite
 
   def initialize
     @name = "black"
+    @opposite = nil
   end
 
   def black?
@@ -35,8 +40,6 @@ end
 
 class Coordinate
   attr_reader :x_value, :y_value
-
-  include Alphanumeric_Key
 
   def initialize(x_value, y_value)
     @x_value = x_value
@@ -109,6 +112,10 @@ class ChessPiece
     @offsets = nil
     @type = nil
     @has_moved = has_moved
+  end
+
+  def info_string
+    "#{color.class}, #{coordinate.value_array}, #{self.class}"
   end
 
   def black_offsets
@@ -203,21 +210,15 @@ class ChessPiece
   end
 
   def nil_color?
-    return true if color.nil?
-
-    false
+    color.nil?
   end
 
   def white?
-    return true if color.white?
-
-    false
+    color.white?
   end
 
   def black?
-    return true if color.black?
-
-    false
+    color.black?
   end
 
   def moved?
@@ -250,7 +251,7 @@ class ChessPiece
 end
 
 class NilPiece < ChessPiece
-  attr_reader :color
+  attr_reader :color, :coordinate
 
   def initialize(coordinate = Coordinate.new(-1, -1))
     @color = nil

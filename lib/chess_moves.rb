@@ -46,6 +46,26 @@ class Move
     true
   end
 
+  def kingside?
+    to_coord.equal?(kingside_to_coordinate)
+  end
+
+  def queenside?
+    to_coord.equal?(queenside_to_coordinate)
+  end
+
+  def en_passant?
+    return false unless piece.pawn?
+    return false unless piece.fifth_rank?
+
+    adjacent_piece = board.piece_at(adjacent_coordinate.value_array)
+    return false unless adjacent_piece.pawn?
+    return false if adjacent_piece.color == color
+    return false unless board.last_moved_two == adjacent_piece
+
+    true
+  end
+
   private
 
   def legal_castle?
@@ -82,14 +102,6 @@ class Move
 
   def valid_castle_coord?
     kingside? || queenside?
-  end
-
-  def kingside?
-    to_coord.equal?(kingside_to_coordinate)
-  end
-
-  def queenside?
-    to_coord.equal?(queenside_to_coordinate)
   end
 
   def kingside_to_coordinate
@@ -129,18 +141,6 @@ class Move
     end
 
     between_array
-  end
-
-  def en_passant?
-    return false unless piece.pawn?
-    return false unless piece.fifth_rank?
-
-    adjacent_piece = board.piece_at(adjacent_coordinate.value_array)
-    return false unless adjacent_piece.pawn?
-    return false if adjacent_piece.color == color
-    return false unless board.last_moved_two == adjacent_piece
-
-    true
   end
 
   def legal_en_passant?

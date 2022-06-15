@@ -1,9 +1,10 @@
-require "./lib/chess_pieces.rb"
-require "./lib/chess_moves.rb"
-
 module Alphanumeric_Key
   ALPHA_TO_X = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7 }.freeze
 end
+
+include Alphanumeric_Key
+require "./lib/chess_pieces.rb"
+require "./lib/chess_moves.rb"
 
 class ChessInput
   def initialize
@@ -77,7 +78,7 @@ end
 class MoveTranslator
   attr_reader :board
 
-  include Alphanumeric_Key
+  # include Alphanumeric_Key
 
   def initialize(board)
     @board = board
