@@ -3,6 +3,47 @@ require "./lib/chess_pieces.rb"
 require "./lib/chess_moves.rb"
 include Alphanumeric_Key
 
+class BoardOutput
+  PIECE_SYMBOLS = {
+    pawn: "P",
+    rook: "R",
+    knight: "N",
+    bishop: "B",
+    queen: "Q",
+    king: "K"
+  }
+
+  def initialize
+  end
+
+  def welcome
+    puts "Welcome to chess. White, make your first move."
+  end
+
+  def final_message(color)
+    puts 'Game over, it\'s a draw.' if color.nil?
+    puts "Game over, #{color.name} wins." unless color.nil?
+  end
+
+  def display_board(board, color)
+    puts "________________"
+    8.times do |y_value|
+      8.times do |x_value|
+        square = board.squares[x_value][y_value]
+        if square.is_a?(NilPiece)
+          print "| " unless x_value == 7
+          print "| |" if x_value == 7
+          next
+        end
+        piece_type = square.type.to_sym
+        print "|#{PIECE_SYMBOLS[piece_type]}" unless x_value == 7
+        print "|#{PIECE_SYMBOLS[piece_type]}|" if x_value == 7
+      end
+      puts
+    end
+  end
+end
+
 class BoardEvaluator
   def initialize(board)
     @board = board
@@ -231,6 +272,10 @@ class Board
   end
 
   def mock_resolve(move)
+    board_copy = self
+    mover.execute_castle(move, board_copy) if move.castle?
+    mover.execute_regular(move, board_copy) if move.regular? || move.en_passant?
+    mover.execute
   end
 
   def resolve(move)
@@ -316,3 +361,6 @@ board = Board.new(nil, [BlackColor.new, WhiteColor.new])
 board.print_pieces
 puts "#################"
 board.print_squares
+
+output = BoardOutput.new
+output.display_board(board, nil)

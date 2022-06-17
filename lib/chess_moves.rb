@@ -66,8 +66,6 @@ class Move
     true
   end
 
-  private
-
   def legal_castle?
     corner_piece = kingside_corner_piece if kingside?
     corner_piece = queenside_corner_piece if queenside?
