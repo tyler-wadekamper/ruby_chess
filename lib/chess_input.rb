@@ -7,15 +7,31 @@ require "./lib/chess_pieces.rb"
 require "./lib/chess_moves.rb"
 
 class ChessInput
-  def initialize
+  attr_reader :win
+
+  def initialize(win)
     @from_alpha = from_alpha
     @to_alpha = to_alpha
+    @win = win
+    reset_position
+  end
+
+  def reset_position
+    win.setpos(0, 2)
   end
 
   def move(color, board)
     move_object = nil
     loop do
       move_object = get_move_object(color, board)
+      # puts "move_object: #{move_object.piece.info_string}, #{move_object.from_coord.value_array}, #{move_object.to_coord.value_array}"
+      win.clear
+      reset_position
+      win.addstr(
+        "#{move_object.coordinates_array}, #{move_object.legal?}, #{move_object.piece.info_string}"
+      )
+      win.refresh
+      sleep 3
       break if move_object.legal?
       illegal_move_message
     end
@@ -33,8 +49,13 @@ class ChessInput
   def alpha_input(color, to_from_string)
     square_choice = nil
     loop do
-      puts "#{color.name}, input the square you will move #{to_from_string} in algebraic notation (ex: e2):"
-      square_choice = gets.chomp
+      win.clear
+      reset_position
+      win.addstr(
+        "#{color.name.capitalize}, input the square you will move #{to_from_string} in algebraic notation (ex: e2):"
+      )
+      win.refresh
+      square_choice = win.getstr
       break if valid_alpha?(square_choice)
       invalid_alpha_message(square_choice)
     end
@@ -43,8 +64,13 @@ class ChessInput
 
   def promotion_option
     loop do
-      puts "Please input the letter of the piece you would like to promote to (Q, R, N, or B):"
-      promotion_choice = gets.chomp
+      win.clear
+      reset_position
+      win.addstr(
+        "Please input the letter of the piece you would like to promote to (Q, R, N, or B):"
+      )
+      win.refresh
+      promotion_choice = win.getstr
       break if %w[q r n b].include?(promotion_choice.downcase)
     end
     promotion_choice
@@ -59,17 +85,29 @@ class ChessInput
     return false unless ("a".."h").include?(first_char)
 
     last_char = alpha_string[-1]
-    return false unless ("0".."7").include?(last_char)
+    return false unless ("1".."8").include?(last_char)
 
     true
   end
 
   def invalid_alpha_message(invalid_alpha)
-    puts "#{invalid_alpha} is not a valid square in algebraic chess notation. Please try again."
+    win.clear
+    reset_position
+    win.addstr(
+      "#{invalid_alpha} is not a valid square in algebraic chess notation. Please try again."
+    )
+    win.refresh
+    sleep 3
   end
 
   def illegal_move_message
-    puts "Your move from #{from_alpha} to #{to_alpha} is not legal. You must move a piece of your color to a legal square. Please try again."
+    win.clear
+    reset_position
+    win.addstr(
+      "Your move from #{from_alpha}: #{from_alpha.length} to #{to_alpha}: #{to_alpha.length} is not legal. You must move a piece of your color to a legal square. Please try again."
+    )
+    win.refresh
+    sleep 3
   end
 
   attr_accessor :from_alpha, :to_alpha
@@ -77,8 +115,6 @@ end
 
 class MoveTranslator
   attr_reader :board
-
-  # include Alphanumeric_Key
 
   def initialize(board)
     @board = board

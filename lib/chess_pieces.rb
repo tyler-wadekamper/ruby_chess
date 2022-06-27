@@ -1,18 +1,36 @@
-require "./lib/chess_moves.rb"
-require "./lib/chess_input.rb"
+require_relative "chess_moves"
+require_relative "chess_input"
 include Alphanumeric_Key
 
-class WhiteColor
-  attr_reader :color, :name
+class Color
+  attr_reader :name
   attr_accessor :opposite
 
   def initialize
-    @name = "white"
     @opposite = nil
+  end
+
+  def white?
+    false
   end
 
   def black?
     false
+  end
+
+  def ==(other)
+    return false if other.is_a?(NilColor)
+    return false if other.nil?
+    other.name == name
+  end
+end
+class WhiteColor < Color
+  attr_reader :name
+  attr_accessor :opposite
+
+  def initialize
+    super
+    @name = "white"
   end
 
   def white?
@@ -20,21 +38,27 @@ class WhiteColor
   end
 end
 
-class BlackColor
-  attr_reader :color, :name
+class BlackColor < Color
+  attr_reader :name
   attr_accessor :opposite
 
   def initialize
+    super
     @name = "black"
-    @opposite = nil
   end
 
   def black?
     true
   end
+end
 
-  def white?
-    false
+class NilColor < Color
+  attr_reader :name
+  attr_accessor :opposite
+
+  def initialize
+    super
+    @name = nil
   end
 end
 
@@ -46,7 +70,7 @@ class Coordinate
     @y_value = y_value
   end
 
-  def equal?(other)
+  def ==(other)
     return false unless x_value == other.x_value
     return false unless y_value == other.y_value
 
@@ -77,13 +101,9 @@ class Coordinate
 end
 
 class ChessPiece
-  attr_reader :color,
-              :offsets,
-              :coordinate,
-              :direction_length,
-              :board,
-              :type,
-              :has_moved
+  attr_reader :color, :offsets, :direction_length, :board, :type
+
+  attr_accessor :coordinate, :has_moved
 
   LEFT = Coordinate.new(-1, 0)
   TOP_LEFT = Coordinate.new(-1, 1)
@@ -128,9 +148,9 @@ class ChessPiece
     reachable = []
     directions.each do |direction|
       direction.coordinates.each do |coord|
-        break if board.piece_at(coord.value_array).same_color?(self)
+        break if board.piece_at(coord).same_color?(self)
 
-        if board.piece_at(coord.value_array).opposite_color?(self)
+        if board.piece_at(coord).opposite_color?(self)
           reachable.push(coord)
           break
         end
@@ -145,11 +165,10 @@ class ChessPiece
     moves = []
     reachable_coordinates.each do |to_coord|
       move = Move.new(color, coordinate, to_coord, board)
-      mock_board =
-        board.mock_result(
-          move.from_coord.value_array,
-          move.to_coord.value_array
-        )
+      # puts "mock resolving legal_regular: #{move.piece.info_string}, #{move.from_coord.value_array}, #{move.to_coord.value_array}"
+      mock_board = board.mock_resolve(move)
+      # puts "mock_piece: #{mock_board.piece_at(coordinate)}, board_piece: #{board.piece_at(coordinate)}"
+      # puts "legal_regular_color: #{color}"
       next if mock_board.in_check?(color)
 
       moves.push(move)
@@ -169,7 +188,9 @@ class ChessPiece
 
   def pawn_length(offset)
     double_length = 2
-    forward_move = [[0, 1], [0, -1]].include?(offset.value_array)
+    forward_move = [Coordinate.new(0, 1), Coordinate.new(0, -1)].include?(
+      offset
+    )
     return direction_length if moved?
     return direction_length unless forward_move
 
@@ -203,14 +224,14 @@ class ChessPiece
     unless piece.is_a?(ChessPiece)
       raise "Method 'opposite_color?' expected ChessPiece object, recieved #{piece}"
     end
-    return false if color.nil?
+    return false if color.is_a?(NilColor)
     return true if piece.color != color
 
     false
   end
 
   def nil_color?
-    color.nil?
+    color.is_a?(NilColor)
   end
 
   def white?
@@ -254,7 +275,7 @@ class NilPiece < ChessPiece
   attr_reader :color, :coordinate
 
   def initialize(coordinate = Coordinate.new(-1, -1))
-    @color = nil
+    @color = NilColor.new
     @coordinate = coordinate
   end
 end
@@ -272,19 +293,16 @@ class Pawn < ChessPiece
     reachable = []
     directions.each do |direction|
       direction.coordinates.each do |coord|
-        break if board.piece_at(coord.value_array).same_color?(self)
+        break if board.piece_at(coord).same_color?(self)
 
-        forward_move =
-          direction.coordinates_array == directions[1].coordinates_array
+        forward_move = (direction == directions[1])
         if forward_move
-          reachable.push(coord) if board.piece_at(coord.value_array).nil_color?
+          reachable.push(coord) if board.piece_at(coord).nil_color?
           break if moved?
         end
 
         unless forward_move
-          if board.piece_at(coord.value_array).opposite_color?(self)
-            reachable.push(coord)
-          end
+          reachable.push(coord) if board.piece_at(coord).opposite_color?(self)
         end
       end
     end
@@ -392,7 +410,11 @@ class Direction
     coordinates
   end
 
-  def coordinates_array
-    coordinates.map(&:value_array)
+  def ==(other)
+    return false unless other.length == length
+    return false unless other.start == start
+    return false unless other.offset == offset
+
+    true
   end
 end

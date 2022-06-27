@@ -6,14 +6,14 @@ class Move
     @from_coord = from_coord
     @to_coord = to_coord
     @board = board
-    @piece = board.piece_at(from_coord.value_array)
+    @piece = board.piece_at(from_coord)
   end
 
   def legal?
     return false if piece.is_a?(NilPiece)
     return false unless piece.color == color
 
-    return true if piece.legal_regular_moves.any? { |move| equal?(move) }
+    return true if piece.legal_regular_moves.any? { |move| move == self }
     return true if legal_castle?
     return true if legal_en_passant?
 
@@ -28,7 +28,7 @@ class Move
   end
 
   def pawn_double?
-    return false unless double_coordinate.equal?(from_coord)
+    return false unless double_coordinate == from_coord
     return false unless piece.pawn?
     return false if piece.moved?
 
@@ -39,26 +39,27 @@ class Move
     [from_coord.value_array, to_coord.value_array]
   end
 
-  def equal?(other)
-    return false unless coordinates_array == other.coordinates_array
+  def ==(other)
+    return false unless from_coord == other.from_coord
+    return false unless to_coord == other.to_coord
     return false unless other.color == color
 
     true
   end
 
   def kingside?
-    to_coord.equal?(kingside_to_coordinate)
+    to_coord == kingside_to_coordinate
   end
 
   def queenside?
-    to_coord.equal?(queenside_to_coordinate)
+    to_coord == queenside_to_coordinate
   end
 
   def en_passant?
     return false unless piece.pawn?
     return false unless piece.fifth_rank?
 
-    adjacent_piece = board.piece_at(adjacent_coordinate.value_array)
+    adjacent_piece = board.piece_at(adjacent_coordinate)
     return false unless adjacent_piece.pawn?
     return false if adjacent_piece.color == color
     return false unless board.last_moved_two == adjacent_piece
@@ -67,18 +68,13 @@ class Move
   end
 
   def legal_castle?
-    corner_piece = kingside_corner_piece if kingside?
-    corner_piece = queenside_corner_piece if queenside?
-
-    return false unless castle?(corner_piece)
-
+    return false unless castle?
     return false if board.in_check?(color)
 
     pieces_between.each do |between|
       mock_board =
-        board.mock_result(
-          from_coord.value_array,
-          between.coordinate.value_array
+        board.mock_resolve(
+          Move.new(color, from_coord, between.coordinate, board)
         )
       return false if mock_board.in_check?(color)
     end
@@ -86,7 +82,10 @@ class Move
     true
   end
 
-  def castle?(corner_piece)
+  def castle?
+    corner_piece = kingside_corner_piece if kingside?
+    corner_piece = queenside_corner_piece if queenside?
+
     return false unless piece.king?
     return false if piece.moved?
     return false unless valid_castle_coord?
@@ -113,13 +112,13 @@ class Move
   end
 
   def kingside_corner_piece
-    return board.piece_at(Coordinate.new(7, 0).value_array) if piece.white?
-    return board.piece_at(Coordinate.new(7, 7).value_array) if piece.black?
+    return board.piece_at(Coordinate.new(7, 0)) if piece.white?
+    return board.piece_at(Coordinate.new(7, 7)) if piece.black?
   end
 
   def queenside_corner_piece
-    return board.piece_at(Coordinate.new(0, 0).value_array) if piece.white?
-    return board.piece_at(Coordinate.new(0, 7).value_array) if piece.black?
+    return board.piece_at(Coordinate.new(0, 0)) if piece.white?
+    return board.piece_at(Coordinate.new(0, 7)) if piece.black?
   end
 
   def pieces_between
@@ -135,7 +134,7 @@ class Move
       break if between_x > 6
 
       next_coordinate = Coordinate.new(between_x, between_y)
-      between_array.push(board.piece_at(next_coordinate.value_array))
+      between_array.push(board.piece_at(next_coordinate))
     end
 
     between_array
@@ -144,7 +143,7 @@ class Move
   def legal_en_passant?
     return false unless en_passant?
 
-    mock_board = board.mock_result(from_coord.value_array, to_coord.value_array)
+    mock_board = board.mock_resolve(self)
     return false if mock_board.in_check?(color)
 
     true
