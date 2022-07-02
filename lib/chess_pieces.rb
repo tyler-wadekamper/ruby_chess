@@ -103,7 +103,10 @@ end
 class ChessPiece
   attr_reader :color, :offsets, :direction_length, :board, :type
 
-  attr_accessor :coordinate, :has_moved
+  attr_accessor :coordinate,
+                :has_moved,
+                :previous_has_moved,
+                :previous_coordinate
 
   LEFT = Coordinate.new(-1, 0)
   TOP_LEFT = Coordinate.new(-1, 1)
@@ -132,6 +135,8 @@ class ChessPiece
     @offsets = nil
     @type = nil
     @has_moved = has_moved
+    @previous_has_moved = false
+    @previous_coordinate = nil
   end
 
   def info_string
@@ -166,18 +171,27 @@ class ChessPiece
     reachable_coordinates.each do |to_coord|
       move = Move.new(color, coordinate, to_coord, board)
       # puts "mock resolving legal_regular: #{move.piece.info_string}, #{move.from_coord.value_array}, #{move.to_coord.value_array}"
-      mock_board = board.mock_resolve(move)
+      mock_board = board.resolve(move, true)
       # puts "mock_piece: #{mock_board.piece_at(coordinate)}, board_piece: #{board.piece_at(coordinate)}"
       # puts "legal_regular_color: #{color}"
-      next if mock_board.in_check?(color)
+      # puts "mock_board: #{mock_board}"
+      if mock_board.in_check?(color)
+        mock_board.reverse_resolve(move)
+        next
+      end
+
+      mock_board.reverse_resolve(move)
 
       moves.push(move)
     end
+
     moves
   end
 
   def directions
     directions = []
+    puts "offsets nil?: #{offsets.nil?}" if offsets.nil?
+    puts "piece: #{info_string}" if offsets.nil?
     offsets.each do |offset|
       length = direction_length
       length = pawn_length(offset) if pawn?
@@ -228,6 +242,24 @@ class ChessPiece
     return true if piece.color != color
 
     false
+  end
+
+  def set_has_moved
+    self.previous_has_moved = has_moved
+    self.has_moved = true
+  end
+
+  def revert_move
+    revert_has_moved
+    revert_coordinate
+  end
+
+  def revert_has_moved
+    has_moved = previous_has_moved
+  end
+
+  def revert_coordinate
+    coordinate = previous_coordinate
   end
 
   def nil_color?

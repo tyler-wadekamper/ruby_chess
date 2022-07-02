@@ -72,11 +72,13 @@ class Move
     return false if board.in_check?(color)
 
     pieces_between.each do |between|
-      mock_board =
-        board.mock_resolve(
-          Move.new(color, from_coord, between.coordinate, board)
-        )
-      return false if mock_board.in_check?(color)
+      move = Move.new(color, from_coord, between.coordinate, board)
+      mock_board = board.resolve(move, true)
+      if mock_board.in_check?(color)
+        mock_board.reverse_resolve(move)
+        return false
+      end
+      mock_board.reverse_resolve(move)
     end
 
     true
@@ -143,8 +145,12 @@ class Move
   def legal_en_passant?
     return false unless en_passant?
 
-    mock_board = board.mock_resolve(self)
-    return false if mock_board.in_check?(color)
+    mock_board = board.resolve(self, true)
+    if mock_board.in_check?(color)
+      mock_board.reverse_resolve(self)
+      return false
+    end
+    mock_board.reverse_resolve(self)
 
     true
   end

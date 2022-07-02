@@ -158,11 +158,12 @@ describe ChessBoard do
           move = Move.new(move_array[0], move_array[1], move_array[2], board)
           board.resolve(move)
         end
+        allow(input).to receive(:win)
       end
 
       it " " do
         output = BoardOutput.new
-        output.display_board(board, white)
+        output.display_board(board, white, true)
       end
 
       describe "#in_check?" do

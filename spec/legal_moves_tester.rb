@@ -106,18 +106,21 @@ def allow_check(board_double, t_case)
   check_board = double("Check Board")
   no_check_board = double("No Check Board")
 
-  allow(board_double).to receive(:mock_resolve).and_return(no_check_board)
+  allow(board_double).to receive(:resolve).and_return(no_check_board)
 
   in_check_to_coords.each do |to_coord_value|
     to_coord = Coordinate.new(to_coord_value[0], to_coord_value[1])
     new_move = Move.new(color, subject_coord, to_coord, board_double)
-    allow(board_double).to receive(:mock_resolve).with(eq(new_move)).and_return(
-      check_board
-    )
+    allow(board_double).to receive(:resolve).with(
+      eq(new_move),
+      true
+    ).and_return(check_board)
   end
 
   allow(check_board).to receive(:in_check?).and_return(true)
   allow(no_check_board).to receive(:in_check?).and_return(false)
+  allow(check_board).to receive(:reverse_resolve)
+  allow(no_check_board).to receive(:reverse_resolve)
 end
 
 def piece_it_string(move_array)

@@ -7,7 +7,7 @@ require "./lib/chess_pieces.rb"
 require "./lib/chess_moves.rb"
 
 class ChessInput
-  attr_reader :win
+  attr_accessor :win
 
   def initialize(win)
     @from_alpha = from_alpha
@@ -25,13 +25,6 @@ class ChessInput
     loop do
       move_object = get_move_object(color, board)
       # puts "move_object: #{move_object.piece.info_string}, #{move_object.from_coord.value_array}, #{move_object.to_coord.value_array}"
-      win.clear
-      reset_position
-      win.addstr(
-        "#{move_object.coordinates_array}, #{move_object.legal?}, #{move_object.piece.info_string}"
-      )
-      win.refresh
-      sleep 3
       break if move_object.legal?
       illegal_move_message
     end
@@ -97,17 +90,17 @@ class ChessInput
       "#{invalid_alpha} is not a valid square in algebraic chess notation. Please try again."
     )
     win.refresh
-    sleep 3
+    # sleep 3
   end
 
   def illegal_move_message
     win.clear
     reset_position
     win.addstr(
-      "Your move from #{from_alpha}: #{from_alpha.length} to #{to_alpha}: #{to_alpha.length} is not legal. You must move a piece of your color to a legal square. Please try again."
+      "Your move from #{from_alpha} to #{to_alpha} is not legal. You must move a piece of your color to a legal square. Please try again."
     )
     win.refresh
-    sleep 3
+    # sleep 3
   end
 
   attr_accessor :from_alpha, :to_alpha

@@ -88,10 +88,15 @@ class Screen
   end
 end
 
-# class Window
-#   def dump
-#   end
-# end
+class Window
+  def marshal_dump
+    []
+  end
+
+  def marshal_load(item)
+    []
+  end
+end
 
 game = ChessManager.new
 game.play
