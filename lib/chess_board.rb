@@ -5,9 +5,7 @@ require_relative "chess_moves"
 include Alphanumeric_Key
 
 class BoardOutput
-  attr_reader :message_win, :board_win
-
-  BLACK_SYMBOLS = {
+  OWN_COLOR_SYMBOLS = {
     pawn: "♙",
     rook: "♖",
     knight: "♘",
@@ -16,7 +14,7 @@ class BoardOutput
     king: "♔"
   }
 
-  WHITE_SYMBOLS = {
+  OPPOSITE_COLOR_SYMBOLS = {
     pawn: "♟",
     rook: "♜",
     knight: "♞",
@@ -25,9 +23,14 @@ class BoardOutput
     king: "♚"
   }
 
+  attr_reader :message_win, :board_win, :opposite, :own
+
   def initialize(board_win = nil, message_win = nil)
     @board_win = board_win
     @message_win = message_win
+
+    @opposite = OPPOSITE_COLOR_SYMBOLS
+    @own = OWN_COLOR_SYMBOLS
 
     message_win.setpos(2, 2) unless message_win.nil?
 
@@ -64,57 +67,136 @@ class BoardOutput
   def display_board(board, color, print = false)
     set_window unless print
     8.times do |count_y|
-      y_value = count_y if color.black?
-      y_value = 7 - count_y if color.white?
+      y_value = y_value(count_y, color)
 
       display("#{y_value + 1} ", print)
 
       8.times do |count_x|
-        x_value = 7 - count_x if color.black?
-        x_value = count_x if color.white?
+        x_value = x_value(count_x, color)
 
-        square = board.squares[x_value][y_value]
+        square_color = square_color(x_value, y_value) unless print
 
-        if square.is_a?(NilPiece)
-          display("| ", print) unless count_x == 7
-          if count_x == 7
-            display("| |", print)
-            unless print
-              board_win.setpos(board_win.cury + 1, board_win.curx - 19)
-            end
-          end
+        piece = board.squares[x_value][y_value]
+
+        set_color(square_color)
+
+        if display_piece(
+             piece,
+             print,
+             board_win,
+             square_color,
+             count_x,
+             count_y
+           )
           next
         end
-
-        piece_type = square.type.to_sym
-        symbol = WHITE_SYMBOLS[piece_type] if square.white?
-        symbol = BLACK_SYMBOLS[piece_type] if square.black?
-
-        display("|#{symbol}", print) unless count_x == 7
-        if count_x == 7
-          display("|#{symbol}|", print)
-          board_win.setpos(board_win.cury + 1, board_win.curx - 19) unless print
-        end
       end
+      set_default_color unless print
       puts if print
 
-      display("   a b c d e f g h", print) if count_y == 7 && color.white?
-      display("   h g f e d c b a", print) if count_y == 7 && color.black?
+      display_coordinate_labels(color, count_y, print)
     end
     board_win.refresh unless print
     puts if print
   end
 end
 
+def display_coordinate_labels(color, count_y, print)
+  display("   a  b  c  d  e  f  g  h ", print) if count_y == 7 && color.white?
+  display("   h  g  f  e  d  c  b  a ", print) if count_y == 7 && color.black?
+end
+
+def display_piece(piece, print, board_win, square_color, count_x, count_y)
+  if piece.is_a?(NilPiece)
+    display("\u200a\u200a\u200a", print, count_x)
+    if count_x == 7
+      board_win.setpos(board_win.cury + 1, board_win.curx - 26) unless print
+    end
+    return true
+  end
+
+  piece_type = piece.type.to_sym
+
+  symbol = get_symbol(piece_type, piece, square_color, print)
+
+  display("\u200a#{symbol}\u200a", print, count_x)
+  if count_x == 7
+    board_win.setpos(board_win.cury + 1, board_win.curx - 26) unless print
+  end
+  false
+end
+
+def get_symbol(piece_type, piece, square_color, print)
+  unless print
+    return opposite[piece_type] if piece.color.name != square_color
+    return own[piece_type] if piece.color.name == square_color
+  end
+
+  if print
+    return opposite[piece_type] if piece.color.white?
+    return own[piece_type] if piece.color.black?
+  end
+end
+
+def y_value(count_y, color)
+  return count_y if color.black?
+  return 7 - count_y if color.white?
+end
+
+def x_value(count_x, color)
+  x_value = 7 - count_x if color.black?
+  x_value = count_x if color.white?
+end
+
+def square_color(x_value, y_value)
+  return "black" if x_value.odd? == y_value.odd?
+  return "white" if x_value.odd? != y_value.odd?
+end
+
+def set_color(square_color)
+  set_white_on_black if square_color == "black"
+  set_black_on_white if square_color == "white"
+end
+
+def set_white_on_black
+  board_win.attron(color_pair(1))
+end
+
+def set_black_on_white
+  board_win.attron(color_pair(2))
+end
+
+def set_default_color
+  board_win.attroff(color_pair(1))
+  board_win.attroff(color_pair(2))
+end
+
 def set_window
   board_win.clear
   board_win.box("|", "-")
-  board_win.setpos((board_win.maxy / 2) - 4, (board_win.maxx / 2) - 10)
+  board_win.setpos((board_win.maxy / 2) - 4, (board_win.maxx / 2) - 14)
 end
 
-def display(string, print)
-  board_win.addstr(string) unless print
-  print "#{string}" if print
+def display(string, print, count_x = 0)
+  unless print
+    board_win.addstr(string)
+    return
+  end
+
+  if string == "   a  b  c  d  e  f  g  h "
+    print "  a b c d e f g h "
+    return
+  end
+
+  if string == "   h  g  f  e  d  c  b  a "
+    print "  h g f e d c b a "
+    return
+  end
+
+  string[0] = "|" if string[0] == "\u200a"
+  string[2] = "|" if string[2] == "\u200a"
+  string.chop! unless count_x == 7
+  print "#{string}"
 end
 
 class BoardSetter
@@ -316,16 +398,6 @@ class ChessBoard
     @squares = setter.populate_squares
   end
 
-  # def mock_resolve(move)
-  #   board_copy = Marshal.load(Marshal.dump(self))
-  #   board_copy.input.win = input.win
-  #   # puts "mock resolve: #{move.piece.info_string}, #{move.from_coord.value_array}, #{move.to_coord.value_array}"
-  #   mover.execute_regular(move, board_copy) if move.regular? || move.en_passant?
-  #   mover.execute_castle(move, board_copy) if move.castle?
-  #   mover.execute_mock_promotion(move, board_copy) if move.promotion?
-  #   board_copy
-  # end
-
   def resolve(move, mock = false)
     # print_pieces
     # puts "resolve: #{move.piece.info_string}, #{move.from_coord.value_array}, #{move.to_coord.value_array}"
@@ -430,20 +502,22 @@ class BoardEvaluator
     board.reachable?(king)
   end
 
-  def stalemate?(colors)
-    black = colors[0]
-    white = colors[1]
-    return false if board.in_check?(black)
-    return false if board.in_check?(white)
+  def stalemate?(color)
+    return false if board.in_check?(color)
 
-    board.pieces.all? { |piece| piece.legal_regular_moves.empty? }
+    cant_move?(color)
   end
 
   def checkmate?(color)
     return false unless board.in_check?(color)
-    king = board.king_of_color(color)
 
-    king.legal_regular_moves.empty?
+    cant_move?(color)
+  end
+
+  def cant_move?(color)
+    color_pieces = board.pieces.filter { |piece| piece.color == color }
+
+    color_pieces.all? { |piece| piece.legal_regular_moves.empty? }
   end
 
   def insufficient_material?
@@ -456,7 +530,10 @@ class BoardEvaluator
 
     return false unless board.pieces.length == 4
     return false unless number_bishops == 2
-    return true if bishops[0].color != bishops[1].color
+    if bishops[0].coordinate.light_square? ==
+         bishops[1].coordinate.light_square?
+      return true
+    end
 
     false
   end

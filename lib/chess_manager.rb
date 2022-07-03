@@ -53,7 +53,7 @@ class ChessManager
   def continue?(colors)
     return false if board.checkmate?(current_turn.opposite)
     return false if board.insufficient_material?
-    return false if board.stalemate?(colors)
+    return false if board.stalemate?(current_turn.opposite)
 
     true
   end
@@ -73,6 +73,10 @@ class Screen
   def initialize
     init_screen
     nocbreak
+    start_color
+    assume_default_colors(-1, -1)
+    init_pair(1, 7, 0)
+    init_pair(2, 0, 7)
   end
 
   def board_window
@@ -85,16 +89,6 @@ class Screen
 
   def input_window
     Window.new(3, cols / 1.2, lines - 2, cols / 7)
-  end
-end
-
-class Window
-  def marshal_dump
-    []
-  end
-
-  def marshal_load(item)
-    []
   end
 end
 

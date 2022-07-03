@@ -98,6 +98,12 @@ class Coordinate
 
     "#{first_char}#{second_char}"
   end
+
+  def light_square?
+    return true if x_value.odd? != y_value.odd?
+
+    false
+  end
 end
 
 class ChessPiece
@@ -135,7 +141,7 @@ class ChessPiece
     @offsets = nil
     @type = nil
     @has_moved = has_moved
-    @previous_has_moved = false
+    @previous_has_moved = has_moved
     @previous_coordinate = nil
   end
 

@@ -18,7 +18,15 @@ class ChessTestCase
               :in_check,
               :stalemate,
               :checkmate,
-              :insufficient_material
+              :insufficient_material,
+              :coordinate,
+              :type,
+              :color,
+              :new_coord,
+              :old_coord,
+              :set_has_moved,
+              :current_has_moved,
+              :previous_has_moved
 
   def initialize(
     description: "",
@@ -38,9 +46,17 @@ class ChessTestCase
     expected_move_coords: [],
     move_arrays: [],
     in_check: nil,
-    stalemate: false,
+    stalemate: nil,
     checkmate: nil,
-    insufficient_material: false
+    insufficient_material: false,
+    coordinate: nil,
+    type: nil,
+    color: nil,
+    new_coord: nil,
+    old_coord: nil,
+    set_has_moved: false,
+    current_has_moved: nil,
+    previous_has_moved: nil
   )
     @description = description
     @subject_piece = subject_piece
@@ -62,5 +78,13 @@ class ChessTestCase
     @stalemate = stalemate
     @checkmate = checkmate
     @insufficient_material = insufficient_material
+    @coordinate = coordinate
+    @type = type
+    @color = color
+    @new_coord = new_coord
+    @old_coord = old_coord
+    @set_has_moved = set_has_moved
+    @current_has_moved = current_has_moved
+    @previous_has_moved = previous_has_moved
   end
 end
