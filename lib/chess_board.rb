@@ -144,8 +144,8 @@ def y_value(count_y, color)
 end
 
 def x_value(count_x, color)
-  x_value = 7 - count_x if color.black?
-  x_value = count_x if color.white?
+  return 7 - count_x if color.black?
+  return count_x if color.white?
 end
 
 def square_color(x_value, y_value)
@@ -194,16 +194,18 @@ def display(string, print, count_x = 0)
   end
 
   string[0] = "|" if string[0] == "\u200a"
+  string[1] = " " if string[1] == "\u200a"
   string[2] = "|" if string[2] == "\u200a"
   string.chop! unless count_x == 7
   print "#{string}"
 end
 
 class BoardSetter
-  attr_reader :board
+  attr_reader :board, :manager
 
-  def initialize(board)
+  def initialize(board, manager)
     @board = board
+    @manager = manager
   end
 
   def empty_board_array
@@ -222,7 +224,7 @@ class BoardSetter
     pieces_array = []
     black = colors[0]
     white = colors[1]
-    # puts "starting_colors: #{colors}"
+
     pieces_array += (create_starting_pieces(black))
     pieces_array += (create_starting_pieces(white))
     pieces_array
@@ -273,7 +275,7 @@ class BoardSetter
       second_rank = 6
     end
 
-    return first_rank, second_rank
+    first_rank, second_rank
   end
 
   def populate_squares
@@ -290,42 +292,27 @@ end
 class PieceMover
   OPTION_TO_PIECE = { q: "Queen", r: "Rook", n: "Knight", b: "Bishop" }
 
-  def initialize
-    @captured_piece = NilPiece.new
-    @moving_piece = NilPiece.new
-    @previous_last_moved = NilPiece.new
-  end
-
   def execute_regular(move, board)
     from_coord = move.from_coord
     to_coord = move.to_coord
 
-    self.moving_piece = board.remove_piece(from_coord)
+    moving_piece = board.remove_piece(from_coord)
 
     captured_coord = to_coord
-    captured_coord = move.adjacent_piece.coordinate if move.en_passant?
+    captured_coord = move.adjacent_coordinate(board) if move.en_passant?(board)
 
-    self.captured_piece = board.remove_piece(captured_coord)
+    board.remove_piece(captured_coord)
     board.add_piece(moving_piece, to_coord)
-    set_last_moved(move, board)
-  end
-
-  def reverse_regular(move, board)
-    board.remove_piece(move.to_coord)
-    board.add_piece(captured_piece, move.to_coord, false)
-    board.add_piece(moving_piece, move.from_coord, false)
-
-    reset_last_moved(move, board)
-    moving_piece.revert_move
+    set_last_moved(move, board, moving_piece)
   end
 
   def execute_castle(move, board)
-    if move.kingside?
+    if move.kingside?(board)
       rook_from_x = 7
       rook_to_x = 5
     end
 
-    if move.queenside?
+    if move.queenside?(board)
       rook_from_x = 0
       rook_to_x = 3
     end
@@ -337,85 +324,72 @@ class PieceMover
     moving_rook = board.remove_piece(rook_old_coord)
 
     rook_new_coord = Coordinate.new(rook_to_x, rook_y)
-    board.add_piece(moving_rook, rook_new_coord, false)
-    board.add_piece(moving_king, move.to_coord, false)
+    board.add_piece(moving_rook, rook_new_coord)
+    board.add_piece(moving_king, move.to_coord)
   end
 
-  def reverse_castle(move, board)
-    king = board.remove_piece(move.to_coord)
-    rook = board.remove_piece(rook_new_coord)
-    board.add_piece(king, move.from_coord, false)
-    board.add_piece(rook, rook_old_coord, false)
-    reset_last_moved(move, board)
-    king.revert_move
-    rook.revert_move
+  def execute_promotion(move, board)
+    option = board.input.promotion_option
+    new_piece = option_to_piece(option, move, board)
+    # new_piece = Queen.new(move.color, move.to_coord, board)
+    captured_piece = board.remove_piece(move.to_coord)
+    promoting_piece = board.remove_piece(move.from_coord)
+    board.add_piece(new_piece, move.to_coord)
   end
 
-  def execute_promotion(move, board, mock = false)
-    option = board.input.promotion_option unless mock
-    new_piece = option_to_piece(option, move) unless mock
-    new_piece = Queen.new(move.color, to_coord, board) if mock
-    self.captured_piece = board.remove_piece(move.from_coord)
-    self.moving_piece = board.add_piece(new_piece, move.to_coord)
+  def set_last_moved(move, board, moving_piece)
+    board.last_moved_two = NilPiece.new unless move.pawn_double?(board)
+    board.last_moved_two = moving_piece if move.pawn_double?(board)
   end
 
-  def set_last_moved(move, board)
-    self.previous_last_moved = board.last_moved_two
-    board.last_moved_two = NilPiece.new unless move.pawn_double?
-    board.last_moved_two = move.piece if move.pawn_double?
-  end
-
-  def reset_last_moved(move, board)
-    board.last_moved_two = previous_last_moved
-  end
-
-  def option_to_piece(option_char, move)
+  def option_to_piece(option_char, move, board)
     option_sym = option_char.to_sym
     Object.const_get(OPTION_TO_PIECE[option_sym]).new(
       move.color,
       move.to_coord,
-      self
+      board
     )
   end
-
-  private
-
-  attr_accessor :captured_piece, :moving_piece, :previous_last_moved
 end
 
 class ChessBoard
-  attr_reader :input, :mover, :colors, :setter
+  attr_reader :input, :mover, :colors, :setter, :move_list, :manager
   attr_accessor :last_moved_two, :pieces, :squares, :evaluator
 
-  def initialize(input, colors)
+  def initialize(manager, move_list = [])
     @last_moved_two = nil
-    @input = input
-    @colors = colors
+    @manager = manager
+    @input = manager.input
+    @colors = manager.colors
     @mover = PieceMover.new
     @evaluator = BoardEvaluator.new(self)
-    @setter = BoardSetter.new(self)
+    @setter = BoardSetter.new(self, manager)
     @pieces = setter.create_pieces(colors)
     @squares = setter.populate_squares
+    @move_list = move_list
+    execute_move_list
   end
 
-  def resolve(move, mock = false)
-    # print_pieces
-    # puts "resolve: #{move.piece.info_string}, #{move.from_coord.value_array}, #{move.to_coord.value_array}"
-    mover.execute_regular(move, self) if move.regular? || move.en_passant?
-    mover.execute_castle(move, self) if move.castle?
-    mover.execute_promotion(move, self, mock) if move.promotion?
+  def execute_move_list
+    move_list.each { |move| resolve(move) }
+  end
+
+  def resolve(move)
+    castle = move.castle?(self)
+    promotion = move.promotion?(self)
+
+    if promotion
+      mover.execute_promotion(move, self)
+    elsif castle
+      mover.execute_castle(move, self)
+    else
+      mover.execute_regular(move, self)
+    end
+
     self
   end
 
-  def reverse_resolve(move)
-    if move.regular? || move.en_passant? || move.promotion?
-      mover.reverse_regular(move, self)
-    end
-    mover.reverse_castle(move, self) if move.castle?
-  end
-
   def in_check?(color)
-    # print_squares
     evaluator.in_check?(color)
   end
 
@@ -445,8 +419,7 @@ class ChessBoard
     squares[coordinate.x_value][coordinate.y_value]
   end
 
-  def add_piece(piece, coordinate, set_has_moved = true)
-    # puts "adding #{piece.info_string} to #{coordinate.value_array}"
+  def add_piece(piece, coordinate)
     unless piece_at(coordinate).is_a?(NilPiece)
       raise "Coordinate at #{coordinate.value_array} is not empty. Cannot add a piece."
     end
@@ -454,19 +427,18 @@ class ChessBoard
     piece.previous_coordinate = piece.coordinate
     piece.coordinate = coordinate
 
-    self.pieces.push(piece) unless piece.is_a?(NilPiece)
-    self.squares[coordinate.x_value][coordinate.y_value] = piece
+    pieces.push(piece) unless piece.is_a?(NilPiece)
+    squares[coordinate.x_value][coordinate.y_value] = piece
 
-    piece.set_has_moved if set_has_moved
+    piece.set_has_moved
     piece
   end
 
   def remove_piece(coordinate)
     removed_piece = piece_at(coordinate)
-    # puts "removing #{removed_piece.info_string} from #{coordinate.value_array}"
     x_value = coordinate.x_value
     y_value = coordinate.y_value
-    self.squares[x_value][y_value] = NilPiece.new(
+    squares[x_value][y_value] = NilPiece.new(
       Coordinate.new(x_value, y_value)
     )
     pieces.delete(removed_piece)
@@ -474,10 +446,8 @@ class ChessBoard
   end
 
   def king_of_color(color)
-    king_array = pieces.select { |piece| piece.king? }
-    # king_array.each { |king| puts "#{king.color}, #{color}" }
+    king_array = pieces.select(&:king?)
     king_array = king_array.select { |king| king.color == color }
-    # puts "#{king_array.length}"
     king_array[0]
   end
 
@@ -497,8 +467,6 @@ class BoardEvaluator
 
   def in_check?(color)
     king = board.king_of_color(color)
-    # puts "in_check color: #{color}"
-    # board.print_pieces
     board.reachable?(king)
   end
 
@@ -545,11 +513,11 @@ class BoardEvaluator
   end
 
   def number_knights
-    board.pieces.count { |piece| piece.knight? }
+    board.pieces.count(&:knight?)
   end
 
   def bishops
-    board.pieces.filter { |piece| piece.bishop? }
+    board.pieces.filter(&:bishop?)
   end
 
   attr_reader :board

@@ -5,10 +5,15 @@ require_relative "ChessTestCase"
 
 describe ChessBoard do
   let(:input) { double("Input") }
+  let(:manager) { double("Manager") }
   white = WhiteColor.new
   black = BlackColor.new
   colors = [black, white]
-  let(:board) { described_class.new(input, colors) }
+  before do
+    allow(manager).to receive(:input).and_return(input)
+    allow(manager).to receive(:colors).and_return(colors)
+  end
+  let(:initial_board) { described_class.new(manager) }
 
   context "with initial board setup" do
     describe "#piece_at" do
@@ -184,7 +189,7 @@ describe ChessBoard do
 
       piece_at_cases.each do |p_case|
         it "returns #{p_case.color} #{p_case.type} on #{p_case.coordinate.value_array}" do
-          piece = board.piece_at(p_case.coordinate)
+          piece = initial_board.piece_at(p_case.coordinate)
           expect(piece.type).to eq(p_case.type)
           expect(piece.coordinate).to eq(p_case.coordinate)
           expect(piece.color.name).to eq(p_case.color)
@@ -194,7 +199,7 @@ describe ChessBoard do
 
       nil_coordinates.each do |coord|
         it "returns NilPiece on #{coord.value_array} with matching coordinate" do
-          piece = board.piece_at(coord)
+          piece = initial_board.piece_at(coord)
           expect(piece.is_a?(NilPiece)).to eq(true)
           expect(piece.coordinate).to eq(coord)
           expect(piece.color.is_a?(NilColor)).to eq(true)
@@ -295,28 +300,30 @@ describe ChessBoard do
             Object.const_get(a_case.type).new(
               a_case.color,
               a_case.old_coord,
-              board,
+              initial_board,
               a_case.current_has_moved
             )
           end
 
           before do
             new_piece.previous_has_moved = a_case.previous_has_moved
-            board.add_piece(new_piece, a_case.new_coord, a_case.set_has_moved)
+            initial_board.add_piece(new_piece, a_case.new_coord)
           end
 
           it " " do
             output = BoardOutput.new
-            output.display_board(board, white, true)
+            output.display_board(initial_board, white, true)
           end
 
           it "adds piece to board.pieces" do
-            expect(board.pieces.include?(new_piece)).to eq (true)
+            expect(initial_board.pieces.include?(new_piece)).to eq (true)
           end
 
           it "changes square at piece coordinate" do
             expect(
-              board.squares[a_case.new_coord.x_value][a_case.new_coord.y_value]
+              initial_board.squares[a_case.new_coord.x_value][
+                a_case.new_coord.y_value
+              ]
             ).to eq(new_piece)
           end
 
@@ -375,22 +382,24 @@ describe ChessBoard do
         context "#{r_case.description}" do
           let(:old_coord) { r_case.old_coord }
 
-          before { board.remove_piece(old_coord) }
+          before { initial_board.remove_piece(old_coord) }
 
           it " " do
             output = BoardOutput.new
-            output.display_board(board, white, true)
+            output.display_board(initial_board, white, true)
           end
 
           it "removes piece from board.pieces" do
             expect(
-              board.pieces.any? { |piece| piece.coordinate.equal?(old_coord) }
+              initial_board.pieces.any? { |piece|
+                piece.coordinate.equal?(old_coord)
+              }
             ).to eq (false)
           end
 
           it "changes square at piece coordinate" do
             expect(
-              board.squares[old_coord.x_value][old_coord.y_value].is_a?(
+              initial_board.squares[old_coord.x_value][old_coord.y_value].is_a?(
                 NilPiece
               )
             ).to eq(true)
@@ -398,7 +407,9 @@ describe ChessBoard do
 
           it "NilPiece coordinate is correct" do
             expect(
-              board.squares[old_coord.x_value][old_coord.y_value].coordinate
+              initial_board.squares[old_coord.x_value][
+                old_coord.y_value
+              ].coordinate
             ).to eq(old_coord)
           end
         end
@@ -816,8 +827,6 @@ describe ChessBoard do
         [white, Coordinate.new(2, 0), Coordinate.new(5, 3)],
         [black, Coordinate.new(3, 5), Coordinate.new(4, 4)],
         [white, Coordinate.new(5, 3), Coordinate.new(4, 4)]
-        # [black, Coordinate.new(7, 6), Coordinate.new(6, 7)],
-        # [white, Coordinate.new(1, 0), Coordinate.new(0, 2)]
       ],
       insufficient_material: true,
       in_check: black
@@ -826,12 +835,25 @@ describe ChessBoard do
 
   board_cases.each do |b_case|
     context "#{b_case.description}" do
-      before do
+      let(:board) do
+        move_list = []
         b_case.move_arrays.each do |move_array|
-          move = Move.new(move_array[0], move_array[1], move_array[2], board)
-          board.resolve(move)
+          move_list.push(
+            Move.new(move_array[0], move_array[1], move_array[2], manager)
+          )
         end
+        ChessBoard.new(manager, move_list)
+      end
+
+      before do
         allow(input).to receive(:win)
+        move_list = []
+        b_case.move_arrays.each do |move_array|
+          move_list.push(
+            Move.new(move_array[0], move_array[1], move_array[2], manager)
+          )
+        end
+        allow(manager).to receive(:move_list_copy).and_return(move_list)
       end
 
       it " " do

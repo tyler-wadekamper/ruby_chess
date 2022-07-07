@@ -1,5 +1,7 @@
+require_relative "chess_board"
 require_relative "chess_moves"
 require_relative "chess_input"
+
 include Alphanumeric_Key
 
 class Color
@@ -71,6 +73,9 @@ class Coordinate
   end
 
   def ==(other)
+    if self.nil? || other.nil?
+      puts "self: #{self.value_array} other: #{other.nil?}"
+    end
     return false unless x_value == other.x_value
     return false unless y_value == other.y_value
 
@@ -107,7 +112,7 @@ class Coordinate
 end
 
 class ChessPiece
-  attr_reader :color, :offsets, :direction_length, :board, :type
+  attr_reader :color, :offsets, :direction_length, :board, :type, :manager
 
   attr_accessor :coordinate,
                 :has_moved,
@@ -143,6 +148,15 @@ class ChessPiece
     @has_moved = has_moved
     @previous_has_moved = has_moved
     @previous_coordinate = nil
+    @manager = board.manager
+  end
+
+  def ==(other)
+    return false unless coordinate == other.coordinate
+    return false unless color == other.color
+    return false unless type == other.type
+
+    true
   end
 
   def info_string
@@ -175,18 +189,10 @@ class ChessPiece
   def legal_regular_moves
     moves = []
     reachable_coordinates.each do |to_coord|
-      move = Move.new(color, coordinate, to_coord, board)
-      # puts "mock resolving legal_regular: #{move.piece.info_string}, #{move.from_coord.value_array}, #{move.to_coord.value_array}"
-      mock_board = board.resolve(move, true)
-      # puts "mock_piece: #{mock_board.piece_at(coordinate)}, board_piece: #{board.piece_at(coordinate)}"
-      # puts "legal_regular_color: #{color}"
-      # puts "mock_board: #{mock_board}"
-      if mock_board.in_check?(color)
-        mock_board.reverse_resolve(move)
-        next
-      end
+      move = Move.new(color, coordinate, to_coord, manager)
 
-      mock_board.reverse_resolve(move)
+      mock_board = manager.mock_board(move)
+      next if mock_board.in_check?(color)
 
       moves.push(move)
     end

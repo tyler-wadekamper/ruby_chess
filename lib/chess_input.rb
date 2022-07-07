@@ -3,8 +3,8 @@ module Alphanumeric_Key
 end
 
 include Alphanumeric_Key
-require "./lib/chess_pieces.rb"
-require "./lib/chess_moves.rb"
+require_relative "chess_pieces"
+require_relative "chess_moves"
 
 class ChessInput
   attr_accessor :win
@@ -20,20 +20,8 @@ class ChessInput
     win.setpos(0, 2)
   end
 
-  def move(color, board)
-    move_object = nil
-    loop do
-      move_object = get_move_object(color, board)
-      # puts "move_object: #{move_object.piece.info_string}, #{move_object.from_coord.value_array}, #{move_object.to_coord.value_array}"
-      break if move_object.legal?
-      illegal_move_message
-    end
-
-    move_object
-  end
-
-  def get_move_object(color, board)
-    translator = MoveTranslator.new(board)
+  def get_move_object(color, board, manager)
+    translator = MoveTranslator.new(board, manager)
     self.from_alpha = alpha_input(color, "from")
     self.to_alpha = alpha_input(color, "to")
     translator.alpha_to_move(color, from_alpha, to_alpha)
@@ -56,6 +44,7 @@ class ChessInput
   end
 
   def promotion_option
+    promotion_choice = nil
     loop do
       win.clear
       reset_position
@@ -67,6 +56,16 @@ class ChessInput
       break if %w[q r n b].include?(promotion_choice.downcase)
     end
     promotion_choice
+  end
+
+  def illegal_move_message
+    win.clear
+    reset_position
+    win.addstr(
+      "Your move from #{from_alpha} to #{to_alpha} is not legal. You must move a piece of your color to a legal square. Please try again."
+    )
+    win.refresh
+    # sleep 3
   end
 
   private
@@ -93,31 +92,22 @@ class ChessInput
     # sleep 3
   end
 
-  def illegal_move_message
-    win.clear
-    reset_position
-    win.addstr(
-      "Your move from #{from_alpha} to #{to_alpha} is not legal. You must move a piece of your color to a legal square. Please try again."
-    )
-    win.refresh
-    # sleep 3
-  end
-
   attr_accessor :from_alpha, :to_alpha
 end
 
 class MoveTranslator
-  attr_reader :board
+  attr_reader :board, :manager
 
-  def initialize(board)
+  def initialize(board, manager)
     @board = board
+    @manager = manager
   end
 
   def alpha_to_move(color, alpha_string_from, alpha_string_to)
     from_coord = alpha_to_coord(alpha_string_from)
     to_coord = alpha_to_coord(alpha_string_to)
 
-    Move.new(color, from_coord, to_coord, board)
+    Move.new(color, from_coord, to_coord, manager)
   end
 
   private

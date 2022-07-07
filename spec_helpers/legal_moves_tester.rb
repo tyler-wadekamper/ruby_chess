@@ -98,7 +98,7 @@ def check_context(t_case)
   context + " result in own check"
 end
 
-def allow_check(board_double, t_case)
+def allow_check(manager, t_case)
   in_check_to_coords = t_case.in_check_coords
   subject_coord = t_case.subject_piece[2]
   color = t_case.subject_piece[1]
@@ -106,21 +106,18 @@ def allow_check(board_double, t_case)
   check_board = double("Check Board")
   no_check_board = double("No Check Board")
 
-  allow(board_double).to receive(:resolve).and_return(no_check_board)
+  allow(manager).to receive(:mock_board).and_return(no_check_board)
 
   in_check_to_coords.each do |to_coord_value|
     to_coord = Coordinate.new(to_coord_value[0], to_coord_value[1])
-    new_move = Move.new(color, subject_coord, to_coord, board_double)
-    allow(board_double).to receive(:resolve).with(
-      eq(new_move),
-      true
-    ).and_return(check_board)
+    new_move = Move.new(color, subject_coord, to_coord, manager)
+    allow(manager).to receive(:mock_board).with(eq(new_move)).and_return(
+      check_board
+    )
   end
 
   allow(check_board).to receive(:in_check?).and_return(true)
   allow(no_check_board).to receive(:in_check?).and_return(false)
-  allow(check_board).to receive(:reverse_resolve)
-  allow(no_check_board).to receive(:reverse_resolve)
 end
 
 def piece_it_string(move_array)
@@ -160,7 +157,7 @@ def expected_moves(t_case, board)
         color,
         subject_coord,
         Coordinate.new(to_coord_value_array[0], to_coord_value_array[1]),
-        board
+        board.manager
       )
     )
   end

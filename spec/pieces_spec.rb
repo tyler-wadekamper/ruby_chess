@@ -1,11 +1,13 @@
 require "./lib/chess_pieces.rb"
-require_relative "legal_moves_tester"
-require_relative "ChessTestCase"
+require "./spec_helpers/legal_moves_tester.rb"
+require "./spec_helpers/ChessTestCase.rb"
 
 describe ChessPiece do
   white = WhiteColor.new
   black = BlackColor.new
   let(:board) { double("ChessBoard") }
+  let(:manager) { double("ChessManager") }
+  before { allow(board).to receive(:manager).and_return(manager) }
 
   describe "#legal_regular_moves" do
     legal_moves_cases = [
@@ -211,13 +213,14 @@ describe ChessPiece do
         before { allow_supporting(board, lm_case) }
 
         context check_context(lm_case).to_s do
-          before { allow_check(board, lm_case) }
+          before { allow_check(manager, lm_case) }
 
           subject(:subject_piece) do
             Object.const_get(lm_case.subject_piece[0]).new(
               lm_case.subject_piece[1],
               lm_case.subject_piece[2],
-              board
+              board,
+              manager
             )
           end
 

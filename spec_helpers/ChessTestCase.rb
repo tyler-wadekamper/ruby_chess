@@ -26,7 +26,8 @@ class ChessTestCase
               :old_coord,
               :set_has_moved,
               :current_has_moved,
-              :previous_has_moved
+              :previous_has_moved,
+              :next_move
 
   def initialize(
     description: "",
@@ -56,7 +57,8 @@ class ChessTestCase
     old_coord: nil,
     set_has_moved: false,
     current_has_moved: nil,
-    previous_has_moved: nil
+    previous_has_moved: nil,
+    next_move: []
   )
     @description = description
     @subject_piece = subject_piece
@@ -86,5 +88,6 @@ class ChessTestCase
     @set_has_moved = set_has_moved
     @current_has_moved = current_has_moved
     @previous_has_moved = previous_has_moved
+    @next_move = next_move
   end
 end
