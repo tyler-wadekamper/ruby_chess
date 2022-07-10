@@ -99,105 +99,105 @@ class BoardOutput
     board_win.refresh unless print
     puts if print
   end
-end
 
-def display_coordinate_labels(color, count_y, print)
-  display("   a  b  c  d  e  f  g  h ", print) if count_y == 7 && color.white?
-  display("   h  g  f  e  d  c  b  a ", print) if count_y == 7 && color.black?
-end
+  def display_coordinate_labels(color, count_y, print)
+    display("   a  b  c  d  e  f  g  h ", print) if count_y == 7 && color.white?
+    display("   h  g  f  e  d  c  b  a ", print) if count_y == 7 && color.black?
+  end
 
-def display_piece(piece, print, board_win, square_color, count_x, count_y)
-  if piece.is_a?(NilPiece)
-    display("\u200a\u200a\u200a", print, count_x)
+  def display_piece(piece, print, board_win, square_color, count_x, count_y)
+    if piece.is_a?(NilPiece)
+      display("\u200a\u200a\u200a", print, count_x)
+      if count_x == 7
+        board_win.setpos(board_win.cury + 1, board_win.curx - 26) unless print
+      end
+      return true
+    end
+
+    piece_type = piece.type.to_sym
+
+    symbol = get_symbol(piece_type, piece, square_color, print)
+
+    display("\u200a#{symbol}\u200a", print, count_x)
     if count_x == 7
       board_win.setpos(board_win.cury + 1, board_win.curx - 26) unless print
     end
-    return true
+    false
   end
 
-  piece_type = piece.type.to_sym
+  def get_symbol(piece_type, piece, square_color, print)
+    unless print
+      return opposite[piece_type] if piece.color.name != square_color
+      return own[piece_type] if piece.color.name == square_color
+    end
 
-  symbol = get_symbol(piece_type, piece, square_color, print)
-
-  display("\u200a#{symbol}\u200a", print, count_x)
-  if count_x == 7
-    board_win.setpos(board_win.cury + 1, board_win.curx - 26) unless print
-  end
-  false
-end
-
-def get_symbol(piece_type, piece, square_color, print)
-  unless print
-    return opposite[piece_type] if piece.color.name != square_color
-    return own[piece_type] if piece.color.name == square_color
+    if print
+      return opposite[piece_type] if piece.color.white?
+      return own[piece_type] if piece.color.black?
+    end
   end
 
-  if print
-    return opposite[piece_type] if piece.color.white?
-    return own[piece_type] if piece.color.black?
-  end
-end
-
-def y_value(count_y, color)
-  return count_y if color.black?
-  return 7 - count_y if color.white?
-end
-
-def x_value(count_x, color)
-  return 7 - count_x if color.black?
-  return count_x if color.white?
-end
-
-def square_color(x_value, y_value)
-  return "black" if x_value.odd? == y_value.odd?
-  return "white" if x_value.odd? != y_value.odd?
-end
-
-def set_color(square_color)
-  set_white_on_black if square_color == "black"
-  set_black_on_white if square_color == "white"
-end
-
-def set_white_on_black
-  board_win.attron(color_pair(1))
-end
-
-def set_black_on_white
-  board_win.attron(color_pair(2))
-end
-
-def set_default_color
-  board_win.attroff(color_pair(1))
-  board_win.attroff(color_pair(2))
-end
-
-def set_window
-  board_win.clear
-  board_win.box("|", "-")
-  board_win.setpos((board_win.maxy / 2) - 4, (board_win.maxx / 2) - 14)
-end
-
-def display(string, print, count_x = 0)
-  unless print
-    board_win.addstr(string)
-    return
+  def y_value(count_y, color)
+    return count_y if color.black?
+    return 7 - count_y if color.white?
   end
 
-  if string == "   a  b  c  d  e  f  g  h "
-    print "  a b c d e f g h "
-    return
+  def x_value(count_x, color)
+    return 7 - count_x if color.black?
+    return count_x if color.white?
   end
 
-  if string == "   h  g  f  e  d  c  b  a "
-    print "  h g f e d c b a "
-    return
+  def square_color(x_value, y_value)
+    return "black" if x_value.odd? == y_value.odd?
+    return "white" if x_value.odd? != y_value.odd?
   end
 
-  string[0] = "|" if string[0] == "\u200a"
-  string[1] = " " if string[1] == "\u200a"
-  string[2] = "|" if string[2] == "\u200a"
-  string.chop! unless count_x == 7
-  print "#{string}"
+  def set_color(square_color)
+    set_white_on_black if square_color == "black"
+    set_black_on_white if square_color == "white"
+  end
+
+  def set_white_on_black
+    board_win.attron(color_pair(1))
+  end
+
+  def set_black_on_white
+    board_win.attron(color_pair(2))
+  end
+
+  def set_default_color
+    board_win.attroff(color_pair(1))
+    board_win.attroff(color_pair(2))
+  end
+
+  def set_window
+    board_win.clear
+    board_win.box("|", "-")
+    board_win.setpos((board_win.maxy / 2) - 4, (board_win.maxx / 2) - 14)
+  end
+
+  def display(string, print, count_x = 0)
+    unless print
+      board_win.addstr(string)
+      return
+    end
+
+    if string == "   a  b  c  d  e  f  g  h "
+      print "  a b c d e f g h "
+      return
+    end
+
+    if string == "   h  g  f  e  d  c  b  a "
+      print "  h g f e d c b a "
+      return
+    end
+
+    string[0] = "|" if string[0] == "\u200a"
+    string[1] = " " if string[1] == "\u200a"
+    string[2] = "|" if string[2] == "\u200a"
+    string.chop! unless count_x == 7
+    print "#{string}"
+  end
 end
 
 class BoardSetter
@@ -275,7 +275,7 @@ class BoardSetter
       second_rank = 6
     end
 
-    first_rank, second_rank
+    [first_rank, second_rank]
   end
 
   def populate_squares
@@ -328,12 +328,11 @@ class PieceMover
     board.add_piece(moving_king, move.to_coord)
   end
 
-  def execute_promotion(move, board)
-    option = board.input.promotion_option
+  def execute_promotion(move, board, mock)
+    option = board.input.promotion_option(mock)
     new_piece = option_to_piece(option, move, board)
-    # new_piece = Queen.new(move.color, move.to_coord, board)
-    captured_piece = board.remove_piece(move.to_coord)
-    promoting_piece = board.remove_piece(move.from_coord)
+    board.remove_piece(move.to_coord)
+    board.remove_piece(move.from_coord)
     board.add_piece(new_piece, move.to_coord)
   end
 
@@ -353,10 +352,10 @@ class PieceMover
 end
 
 class ChessBoard
-  attr_reader :input, :mover, :colors, :setter, :move_list, :manager
+  attr_reader :input, :mover, :colors, :setter, :move_list, :manager, :mock
   attr_accessor :last_moved_two, :pieces, :squares, :evaluator
 
-  def initialize(manager, move_list = [])
+  def initialize(manager, move_list = [], mock: false)
     @last_moved_two = nil
     @manager = manager
     @input = manager.input
@@ -367,19 +366,20 @@ class ChessBoard
     @pieces = setter.create_pieces(colors)
     @squares = setter.populate_squares
     @move_list = move_list
+    @mock = mock
     execute_move_list
   end
 
   def execute_move_list
-    move_list.each { |move| resolve(move) }
+    move_list.each { |move| resolve(move, mock) }
   end
 
-  def resolve(move)
+  def resolve(move, mock)
     castle = move.castle?(self)
     promotion = move.promotion?(self)
 
     if promotion
-      mover.execute_promotion(move, self)
+      mover.execute_promotion(move, self, mock)
     elsif castle
       mover.execute_castle(move, self)
     else
@@ -424,7 +424,6 @@ class ChessBoard
       raise "Coordinate at #{coordinate.value_array} is not empty. Cannot add a piece."
     end
 
-    piece.previous_coordinate = piece.coordinate
     piece.coordinate = coordinate
 
     pieces.push(piece) unless piece.is_a?(NilPiece)
@@ -438,9 +437,7 @@ class ChessBoard
     removed_piece = piece_at(coordinate)
     x_value = coordinate.x_value
     y_value = coordinate.y_value
-    squares[x_value][y_value] = NilPiece.new(
-      Coordinate.new(x_value, y_value)
-    )
+    squares[x_value][y_value] = NilPiece.new(Coordinate.new(x_value, y_value))
     pieces.delete(removed_piece)
     removed_piece
   end

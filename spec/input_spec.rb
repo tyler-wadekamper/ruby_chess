@@ -1,7 +1,7 @@
 require "./lib/chess_pieces.rb"
 require "./lib/chess_moves.rb"
-require_relative "ChessTestCase.rb"
-require_relative "input_tester.rb"
+require "./spec_helpers/ChessTestCase.rb"
+require "./spec_helpers/input_tester.rb"
 
 describe ChessInput do
   white = WhiteColor.new
@@ -9,8 +9,10 @@ describe ChessInput do
   let(:board) { double("ChessBoard") }
   let(:window) { double("Window") }
   let(:move_double) { double("Move") }
+  let(:manager) { double("ChessManager") }
+  before { allow(board).to receive(:manager).and_return(manager) }
 
-  describe "#move" do
+  describe "#get_move_object" do
     input_cases = [
       ChessTestCase.new(
         moving_color: black,
@@ -60,6 +62,13 @@ describe ChessInput do
         to_alpha_inputs: ["h1"],
         legal_return_values: [true],
         expected_move_coords: [[7, 7], [7, 0]]
+      ),
+      ChessTestCase.new(
+        moving_color: black,
+        from_alpha_inputs: ["a1"],
+        to_alpha_inputs: ["a8"],
+        legal_return_values: [true],
+        expected_move_coords: [[0, 0], [0, 7]]
       )
     ]
 
@@ -85,14 +94,6 @@ describe ChessInput do
 
             context legal_context(in_case) do
               before { allow_legal(move_double, in_case) }
-
-              it get_move_context(in_case) do
-                execute_get_move(subject_input, move_double, board, in_case)
-              end
-
-              it "returns the move_double object" do
-                execute_move_double(subject_input, move_double, board, in_case)
-              end
 
               it get_move_object_context(in_case) do
                 execute_get_move_object(in_case)

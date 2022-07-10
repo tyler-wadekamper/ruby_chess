@@ -1,7 +1,7 @@
 require "./lib/chess_board.rb"
 require "./lib/chess_input.rb"
 require "./lib/chess_pieces.rb"
-require_relative "ChessTestCase"
+require "./spec_helpers/ChessTestCase.rb"
 
 describe ChessBoard do
   let(:input) { double("Input") }
@@ -218,9 +218,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(5, 1),
           type: "Pawn",
           color: white,
-          previous_has_moved: false,
-          current_has_moved: false,
-          set_has_moved: true
+          current_has_moved: false
         ),
         ChessTestCase.new(
           description: "When adding a black queen to [2, 4]",
@@ -228,9 +226,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(4, 2),
           type: "Queen",
           color: black,
-          previous_has_moved: false,
-          current_has_moved: true,
-          set_has_moved: true
+          current_has_moved: true
         ),
         ChessTestCase.new(
           description: "When adding a white bishop to [7, 5]",
@@ -238,9 +234,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(5, 3),
           type: "Bishop",
           color: white,
-          previous_has_moved: true,
-          current_has_moved: false,
-          set_has_moved: true
+          current_has_moved: false
         ),
         ChessTestCase.new(
           description: "When adding a white bishop to [7, 5]",
@@ -248,9 +242,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(5, 3),
           type: "Bishop",
           color: white,
-          previous_has_moved: true,
-          current_has_moved: true,
-          set_has_moved: true
+          current_has_moved: true
         ),
         ChessTestCase.new(
           description: "When adding a black bishop to [5, 3]",
@@ -258,9 +250,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(5, 1),
           type: "Bishop",
           color: black,
-          previous_has_moved: false,
-          current_has_moved: false,
-          set_has_moved: false
+          current_has_moved: false
         ),
         ChessTestCase.new(
           description: "When adding a black rook to [2, 4]",
@@ -268,9 +258,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(4, 2),
           type: "Rook",
           color: black,
-          previous_has_moved: false,
-          current_has_moved: true,
-          set_has_moved: false
+          current_has_moved: true
         ),
         ChessTestCase.new(
           description: "When adding a white queen to [7, 5]",
@@ -278,9 +266,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(5, 3),
           type: "Queen",
           color: white,
-          previous_has_moved: true,
-          current_has_moved: false,
-          set_has_moved: false
+          current_has_moved: false
         ),
         ChessTestCase.new(
           description: "When adding a black knight to [7, 5]",
@@ -288,9 +274,7 @@ describe ChessBoard do
           old_coord: Coordinate.new(5, 3),
           type: "Knight",
           color: black,
-          previous_has_moved: true,
-          current_has_moved: true,
-          set_has_moved: false
+          current_has_moved: true
         )
       ]
 
@@ -305,10 +289,7 @@ describe ChessBoard do
             )
           end
 
-          before do
-            new_piece.previous_has_moved = a_case.previous_has_moved
-            initial_board.add_piece(new_piece, a_case.new_coord)
-          end
+          before { initial_board.add_piece(new_piece, a_case.new_coord) }
 
           it " " do
             output = BoardOutput.new
@@ -331,24 +312,8 @@ describe ChessBoard do
             expect(new_piece.coordinate).to eq(a_case.new_coord)
           end
 
-          it "changes piece.previous_coordinate to #{a_case.old_coord.value_array}" do
-            expect(new_piece.previous_coordinate).to eq(a_case.old_coord)
-          end
-
-          it "sets piece has_moved and previous_has_moved to the correct values" do
-            if a_case.set_has_moved == true
-              expect(new_piece.moved?).to eq(true)
-              expect(new_piece.previous_has_moved).to eq(
-                a_case.current_has_moved
-              )
-            end
-
-            if a_case.set_has_moved == false
-              expect(new_piece.moved?).to eq(a_case.current_has_moved)
-              expect(new_piece.previous_has_moved).to eq(
-                a_case.previous_has_moved
-              )
-            end
+          it "sets piece has_moved  to true" do
+            expect(new_piece.moved?).to eq(true)
           end
         end
       end
@@ -842,19 +807,14 @@ describe ChessBoard do
             Move.new(move_array[0], move_array[1], move_array[2], manager)
           )
         end
+        allow(manager).to receive(:mock_board) do |new_move|
+          move_list.push(new_move)
+          ChessBoard.new(manager, move_list)
+        end
         ChessBoard.new(manager, move_list)
       end
 
-      before do
-        allow(input).to receive(:win)
-        move_list = []
-        b_case.move_arrays.each do |move_array|
-          move_list.push(
-            Move.new(move_array[0], move_array[1], move_array[2], manager)
-          )
-        end
-        allow(manager).to receive(:move_list_copy).and_return(move_list)
-      end
+      before { allow(input).to receive(:win) }
 
       it " " do
         output = BoardOutput.new

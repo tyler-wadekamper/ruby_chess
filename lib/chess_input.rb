@@ -20,8 +20,8 @@ class ChessInput
     win.setpos(0, 2)
   end
 
-  def get_move_object(color, board, manager)
-    translator = MoveTranslator.new(board, manager)
+  def get_move_object(color, board)
+    translator = MoveTranslator.new(board)
     self.from_alpha = alpha_input(color, "from")
     self.to_alpha = alpha_input(color, "to")
     translator.alpha_to_move(color, from_alpha, to_alpha)
@@ -43,7 +43,8 @@ class ChessInput
     square_choice.downcase
   end
 
-  def promotion_option
+  def promotion_option(mock)
+    return "q" if mock
     promotion_choice = nil
     loop do
       win.clear
@@ -65,7 +66,7 @@ class ChessInput
       "Your move from #{from_alpha} to #{to_alpha} is not legal. You must move a piece of your color to a legal square. Please try again."
     )
     win.refresh
-    # sleep 3
+    sleep 3
   end
 
   private
@@ -89,7 +90,7 @@ class ChessInput
       "#{invalid_alpha} is not a valid square in algebraic chess notation. Please try again."
     )
     win.refresh
-    # sleep 3
+    sleep 3
   end
 
   attr_accessor :from_alpha, :to_alpha
@@ -98,9 +99,9 @@ end
 class MoveTranslator
   attr_reader :board, :manager
 
-  def initialize(board, manager)
+  def initialize(board)
     @board = board
-    @manager = manager
+    @manager = board.manager
   end
 
   def alpha_to_move(color, alpha_string_from, alpha_string_to)

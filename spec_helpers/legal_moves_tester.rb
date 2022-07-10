@@ -171,8 +171,8 @@ def expected_moves_string(t_case)
   move_coord_array(subject_coord.value_array, expected_to_coords)
 end
 
-def move_execute_it(test_subject, t_case)
-  legal_move = test_subject.legal?
+def move_execute_it(board, test_subject, t_case)
+  legal_move = test_subject.legal?(board)
 
   expect(legal_move).to eq(t_case.expected_legal)
 end

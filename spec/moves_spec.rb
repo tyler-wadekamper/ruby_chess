@@ -1,12 +1,14 @@
 require "./lib/chess_pieces.rb"
 require "./lib/chess_moves.rb"
-require_relative "legal_moves_tester.rb"
-require_relative "ChessTestCase.rb"
+require "./spec_helpers/legal_moves_tester.rb"
+require "./spec_helpers/ChessTestCase.rb"
 
 describe Move do
   white = WhiteColor.new
   black = BlackColor.new
   let(:board) { double("ChessBoard") }
+  let(:manager) { double("ChessManager") }
+  before { allow(board).to receive(:manager).and_return(manager) }
 
   describe "#legal?" do
     move_cases = [
@@ -417,7 +419,7 @@ describe Move do
         end
 
         context check_context(mv_case) do
-          before { allow_check(board, mv_case) }
+          before { allow_check(manager, mv_case) }
 
           context board_check_context(mv_case) do
             before { allow_board_check(board, mv_case) }
@@ -427,14 +429,14 @@ describe Move do
                 mv_case.moving_color,
                 mv_case.subject_piece[2],
                 mv_case.to_coord,
-                board
+                manager
               )
             end
 
             context legal_context(mv_case) do
               context move_string(mv_case) do
                 it "returns #{mv_case.expected_legal} - #{mv_case.description}" do
-                  move_execute_it(subject_move, mv_case)
+                  move_execute_it(board, subject_move, mv_case)
                 end
               end
             end

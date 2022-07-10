@@ -73,9 +73,6 @@ class Coordinate
   end
 
   def ==(other)
-    if self.nil? || other.nil?
-      puts "self: #{self.value_array} other: #{other.nil?}"
-    end
     return false unless x_value == other.x_value
     return false unless y_value == other.y_value
 
@@ -114,10 +111,7 @@ end
 class ChessPiece
   attr_reader :color, :offsets, :direction_length, :board, :type, :manager
 
-  attr_accessor :coordinate,
-                :has_moved,
-                :previous_has_moved,
-                :previous_coordinate
+  attr_accessor :coordinate, :has_moved
 
   LEFT = Coordinate.new(-1, 0)
   TOP_LEFT = Coordinate.new(-1, 1)
@@ -146,8 +140,6 @@ class ChessPiece
     @offsets = nil
     @type = nil
     @has_moved = has_moved
-    @previous_has_moved = has_moved
-    @previous_coordinate = nil
     @manager = board.manager
   end
 
@@ -202,8 +194,6 @@ class ChessPiece
 
   def directions
     directions = []
-    puts "offsets nil?: #{offsets.nil?}" if offsets.nil?
-    puts "piece: #{info_string}" if offsets.nil?
     offsets.each do |offset|
       length = direction_length
       length = pawn_length(offset) if pawn?
@@ -257,21 +247,7 @@ class ChessPiece
   end
 
   def set_has_moved
-    self.previous_has_moved = has_moved
     self.has_moved = true
-  end
-
-  def revert_move
-    revert_has_moved
-    revert_coordinate
-  end
-
-  def revert_has_moved
-    has_moved = previous_has_moved
-  end
-
-  def revert_coordinate
-    coordinate = previous_coordinate
   end
 
   def nil_color?

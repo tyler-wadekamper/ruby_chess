@@ -205,6 +205,16 @@ describe ChessPiece do
           [7, 1],
           [6, 0]
         ]
+      ),
+      ChessTestCase.new(
+        subject_piece: ["Pawn", white, Coordinate.new(2, 6)],
+        supporting: [
+          ["Queen", black, Coordinate.new(3, 7)],
+          ["Bishop", black, Coordinate.new(2, 7)],
+          ["Knight", black, Coordinate.new(1, 7)]
+        ],
+        in_check_coords: [[1, 7], [3, 7]],
+        expected: []
       )
     ]
 
@@ -219,8 +229,7 @@ describe ChessPiece do
             Object.const_get(lm_case.subject_piece[0]).new(
               lm_case.subject_piece[1],
               lm_case.subject_piece[2],
-              board,
-              manager
+              board
             )
           end
 

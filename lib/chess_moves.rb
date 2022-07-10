@@ -1,5 +1,5 @@
 class Move
-  attr_reader :color, :from_coord, :to_coord, :board, :piece, :manager
+  attr_reader :color, :from_coord, :to_coord, :board, :manager
 
   def initialize(color, from_coord, to_coord, manager)
     @color = color
@@ -11,6 +11,7 @@ class Move
 
   def piece(board)
     return @piece unless @piece.nil?
+
     @piece = board.piece_at(from_coord)
     @piece
   end
@@ -69,7 +70,6 @@ class Move
     return false if adjacent_piece.color == color
     return false unless board.last_moved_two == adjacent_piece
 
-    puts "returning true"
     true
   end
 
@@ -80,9 +80,7 @@ class Move
     pieces_between(board).each do |between|
       move = Move.new(color, from_coord, between.coordinate, manager)
 
-      mock_list = manager.move_list_copy.push(move)
-      mock_board = ChessBoard.new(manager, mock_list)
-
+      mock_board = manager.mock_board(move)
       return false if mock_board.in_check?(color)
     end
 
@@ -113,11 +111,15 @@ class Move
   def kingside_to_coordinate(board)
     return Coordinate.new(6, 0) if piece(board).white?
     return Coordinate.new(6, 7) if piece(board).black?
+
+    Coordinate.new(-1, -1)
   end
 
   def queenside_to_coordinate(board)
     return Coordinate.new(2, 0) if piece(board).white?
     return Coordinate.new(2, 7) if piece(board).black?
+
+    Coordinate.new(-1, -1)
   end
 
   def kingside_corner_piece(board)
@@ -153,7 +155,6 @@ class Move
     return false unless en_passant?(board)
 
     mock_board = manager.mock_board(self)
-
     return false if mock_board.in_check?(color)
 
     true
@@ -166,15 +167,17 @@ class Move
     true
   end
 
-  def double_coordinate(board)
-    adjustment = -2 if piece(board).white?
-    adjustment = 2 if piece(board).black?
+  def regular?(board)
+    piece(board).legal_regular_moves.any? { |move| move == self }
+  end
 
-    if to_coord.nil? || from_coord.nil?
-      puts "from_coord nil? #{from_coord.nil?}, to_coord nil? #{to_coord.nil?}"
-    end
-    if to_coord.x_value.nil? || to_coord.y_value.nil?
-      puts "to_coord x nil? #{to_coord.x_value.nil?}, to_coord y nil? #{to_coord._value.ynil?}"
+  def double_coordinate(board)
+    if piece(board).white?
+      adjustment = -2
+    elsif piece(board).black?
+      adjustment = 2
+    else
+      return Coordinate.new(-1, -1)
     end
 
     Coordinate.new(to_coord.x_value, to_coord.y_value + adjustment)
